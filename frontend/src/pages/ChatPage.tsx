@@ -5,8 +5,8 @@ import {
   UserOutlined,
 } from "@ant-design/icons";
 import { Avatar, Button, Card, Input, Space, Tag } from "antd";
-import { useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { useLearningStore } from "../stores/useLearningStore";
 
@@ -46,6 +46,7 @@ const nowTime = () =>
 
 export function ChatPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const plan = useLearningStore((state) => state.plan);
   const blackboard = useLearningStore((state) => state.blackboard);
   const setup = useLearningStore((state) => state.setup);
@@ -53,6 +54,17 @@ export function ChatPage() {
   const [input, setInput] = useState("");
   const [thinking, setThinking] = useState(false);
   const timer = useRef<number | null>(null);
+  const demoMode = searchParams.get("demo") === "1";
+
+  useEffect(
+    () => () => {
+      if (timer.current) window.clearTimeout(timer.current);
+    },
+    [],
+  );
+
+  const go = (path: string) =>
+    navigate(demoMode ? `${path}?demo=1` : path);
 
   const reply = (text: string) => {
     if (/冲突|计划|预算/.test(text)) {
@@ -187,7 +199,7 @@ export function ChatPage() {
                       {item.options.map((option) => (
                         <Button
                           key={option.label}
-                          onClick={() => navigate(option.path)}
+                          onClick={() => go(option.path)}
                         >
                           {option.label}
                           <ArrowRightOutlined />

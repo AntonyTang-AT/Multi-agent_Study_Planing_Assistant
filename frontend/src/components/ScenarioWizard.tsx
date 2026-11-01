@@ -92,7 +92,7 @@ export function ScenarioWizard() {
           <span className="scenario-card__eyebrow">START HERE</span>
           <h2 id="scenario-title">设定这次学习</h2>
         </div>
-        <Tag color="green">F2 · Mock / Agent 共用</Tag>
+        <Tag color="green">Mock / API 统一合同</Tag>
       </div>
 
       {error ? (

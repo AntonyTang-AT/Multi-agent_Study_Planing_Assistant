@@ -1,15 +1,47 @@
-import { ConfigProvider } from "antd";
+import { ConfigProvider, Spin } from "antd";
 import zhCN from "antd/locale/zh_CN";
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
+import { AppErrorBoundary } from "./components/AppErrorBoundary";
 import { AppLayout } from "./components/layout/AppLayout";
-import { BlackboardPage } from "./pages/BlackboardPage";
-import { ChatPage } from "./pages/ChatPage";
-import { HomePage } from "./pages/HomePage";
-import { MaterialsPage } from "./pages/MaterialsPage";
-import { PlanPage } from "./pages/PlanPage";
-import { PracticePage } from "./pages/PracticePage";
-import { TracePage } from "./pages/TracePage";
+
+const HomePage = lazy(() =>
+  import("./pages/HomePage").then((module) => ({ default: module.HomePage })),
+);
+const ChatPage = lazy(() =>
+  import("./pages/ChatPage").then((module) => ({ default: module.ChatPage })),
+);
+const PlanPage = lazy(() =>
+  import("./pages/PlanPage").then((module) => ({ default: module.PlanPage })),
+);
+const PracticePage = lazy(() =>
+  import("./pages/PracticePage").then((module) => ({
+    default: module.PracticePage,
+  })),
+);
+const MaterialsPage = lazy(() =>
+  import("./pages/MaterialsPage").then((module) => ({
+    default: module.MaterialsPage,
+  })),
+);
+const TracePage = lazy(() =>
+  import("./pages/TracePage").then((module) => ({ default: module.TracePage })),
+);
+const BlackboardPage = lazy(() =>
+  import("./pages/BlackboardPage").then((module) => ({
+    default: module.BlackboardPage,
+  })),
+);
+
+function PageLoader() {
+  return (
+    <div className="page-loader" role="status" aria-label="正在加载页面">
+      <Spin size="large" />
+      <span>正在读取学习上下文...</span>
+    </div>
+  );
+}
 
 export default function App() {
   return (
@@ -45,18 +77,22 @@ export default function App() {
       }}
     >
       <BrowserRouter>
-        <Routes>
-          <Route element={<AppLayout />}>
-            <Route index element={<HomePage />} />
-            <Route path="chat" element={<ChatPage />} />
-            <Route path="plan" element={<PlanPage />} />
-            <Route path="practice" element={<PracticePage />} />
-            <Route path="materials" element={<MaterialsPage />} />
-            <Route path="trace" element={<TracePage />} />
-            <Route path="blackboard" element={<BlackboardPage />} />
-            <Route path="*" element={<Navigate replace to="/" />} />
-          </Route>
-        </Routes>
+        <AppErrorBoundary>
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              <Route element={<AppLayout />}>
+                <Route index element={<HomePage />} />
+                <Route path="chat" element={<ChatPage />} />
+                <Route path="plan" element={<PlanPage />} />
+                <Route path="practice" element={<PracticePage />} />
+                <Route path="materials" element={<MaterialsPage />} />
+                <Route path="trace" element={<TracePage />} />
+                <Route path="blackboard" element={<BlackboardPage />} />
+                <Route path="*" element={<Navigate replace to="/" />} />
+              </Route>
+            </Routes>
+          </Suspense>
+        </AppErrorBoundary>
       </BrowserRouter>
     </ConfigProvider>
   );
