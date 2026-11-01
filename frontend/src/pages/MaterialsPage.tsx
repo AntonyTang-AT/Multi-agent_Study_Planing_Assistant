@@ -21,6 +21,7 @@ import { Link } from "react-router-dom";
 
 import { agentErrorMessage } from "../api/ai";
 import { fetchMaterials, type MaterialQuery } from "../api/backend";
+import { NextStepCard } from "../components/NextStepCard";
 import type { Material, Subject } from "../types/api";
 
 type SubjectFilter = "all" | Subject;
@@ -191,6 +192,15 @@ export function MaterialsPage() {
           </Link>
         </Space>
       </Card>
+
+      <NextStepCard
+        eyebrow="NEXT · PRACTICE"
+        title="把资料变成一次可校验的练习"
+        description="从当前资料的知识点进入练习，作答和校验结果会自动写入轨迹。"
+        label="用这份资料练习"
+        to="/practice"
+        icon={<FileTextOutlined />}
+      />
     </div>
   );
 }

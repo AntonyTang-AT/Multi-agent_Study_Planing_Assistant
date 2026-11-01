@@ -2396,6 +2396,73 @@ p {
   white-space: nowrap;
 }
 
+.next-step-card {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 18px 20px;
+  border: 1px solid #cbded4;
+  border-radius: 8px;
+  color: inherit;
+  text-decoration: none;
+  background: #f3faf6;
+  transition:
+    border-color 160ms ease,
+    transform 160ms ease,
+    background 160ms ease;
+}
+
+.next-step-card:hover {
+  border-color: #91bba7;
+  transform: translateY(-1px);
+  background: #edf8f2;
+}
+
+.next-step-card__icon {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border-radius: 7px;
+  color: #f4d17d;
+  font-size: 17px;
+  background: var(--pine);
+}
+
+.next-step-card__copy {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.next-step-card__copy small {
+  color: var(--green);
+  font-family: Georgia, serif;
+  font-size: 8px;
+  letter-spacing: 0.7px;
+}
+
+.next-step-card__copy strong {
+  font-family: "STZhongsong", "Songti SC", serif;
+  font-size: 16px;
+}
+
+.next-step-card__copy p {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.next-step-card__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--green);
+  font-size: 9px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 @media (max-width: 1080px) {
   .journey-bar {
     top: 72px;
@@ -2444,6 +2511,21 @@ p {
 
   .journey-bar__arrow {
     margin: 0 1px;
+  }
+
+  .next-step-card {
+    grid-template-columns: 36px minmax(0, 1fr);
+    gap: 10px;
+    padding: 15px;
+  }
+
+  .next-step-card__icon {
+    width: 34px;
+    height: 34px;
+  }
+
+  .next-step-card__action {
+    grid-column: 2;
   }
 
   .demo-mode-button {

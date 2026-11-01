@@ -68,7 +68,7 @@ export function DemoBar() {
           question: {
             stem: "lim(x→0) (sin(3x) - 3x) / x³",
             verify_hint: {
-              expr: "limit((sin(3*x)-3*x)/x^3, x, 0)",
+              expr: "limit((sin(3*x)-3*x)/x**3, x, 0)",
               expected: "-9/2",
             },
           },

@@ -2,6 +2,7 @@ import {
   CalendarOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
+  FormOutlined,
   ProjectOutlined,
   ReloadOutlined,
 } from "@ant-design/icons";
@@ -25,6 +26,7 @@ import {
   saveCurrentPlan,
 } from "../api/backend";
 import { BlackboardPanel } from "../components/BlackboardPanel";
+import { NextStepCard } from "../components/NextStepCard";
 import { UserOptionsCard } from "../components/UserOptionsCard";
 import { useLearningStore } from "../stores/useLearningStore";
 import type { PlanTask } from "../types/api";
@@ -294,6 +296,15 @@ export function PlanPage() {
           </section>
         </aside>
       </section>
+
+      <NextStepCard
+        eyebrow="NEXT · PRACTICE"
+        title="用一道题验证计划是否真正可执行"
+        description="练习结果会回写轨迹，也会暴露计划中的高负荷节点。"
+        label="进入练习"
+        to="/practice"
+        icon={<FormOutlined />}
+      />
     </div>
   );
 }

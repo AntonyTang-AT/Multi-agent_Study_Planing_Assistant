@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { useLearningStore } from "../stores/useLearningStore";
+import { NextStepCard } from "../components/NextStepCard";
 
 interface ChatOption {
   label: string;
@@ -279,6 +280,15 @@ export function ChatPage() {
           </Card>
         </aside>
       </section>
+
+      <NextStepCard
+        eyebrow="NEXT · PLAN"
+        title="把对话中的约束变成可审计计划"
+        description="主 Agent 只负责识别与组织证据，计划写入仍需要你在计划页确认。"
+        label="进入计划"
+        to="/plan"
+        icon={<RobotOutlined />}
+      />
     </div>
   );
 }
