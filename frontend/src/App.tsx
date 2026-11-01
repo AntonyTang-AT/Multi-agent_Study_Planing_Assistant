@@ -9,6 +9,7 @@ import { HomePage } from "./pages/HomePage";
 import { MaterialsPage } from "./pages/MaterialsPage";
 import { PlanPage } from "./pages/PlanPage";
 import { PracticePage } from "./pages/PracticePage";
+import { TracePage } from "./pages/TracePage";
 
 export default function App() {
   return (
@@ -51,6 +52,7 @@ export default function App() {
             <Route path="plan" element={<PlanPage />} />
             <Route path="practice" element={<PracticePage />} />
             <Route path="materials" element={<MaterialsPage />} />
+            <Route path="trace" element={<TracePage />} />
             <Route path="blackboard" element={<BlackboardPage />} />
             <Route path="*" element={<Navigate replace to="/" />} />
           </Route>

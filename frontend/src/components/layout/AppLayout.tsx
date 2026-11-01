@@ -5,15 +5,25 @@ import {
   CloudServerOutlined,
   FormOutlined,
   HomeOutlined,
+  LineChartOutlined,
   MenuOutlined,
   MessageOutlined,
+  PlayCircleOutlined,
   ProjectOutlined,
 } from "@ant-design/icons";
 import { Button, Drawer, Tag, Tooltip } from "antd";
 import { useEffect, useState } from "react";
-import { NavLink, Outlet, useLocation } from "react-router-dom";
+import {
+  NavLink,
+  Outlet,
+  useLocation,
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom";
 
 import { isMockMode } from "../../api/client";
+import { createSession } from "../../api/backend";
+import { DemoBar } from "../DemoBar";
 
 const navigation = [
   { to: "/", label: "首页", icon: <HomeOutlined /> },
@@ -21,6 +31,7 @@ const navigation = [
   { to: "/plan", label: "学习计划", icon: <CalendarOutlined /> },
   { to: "/practice", label: "练习", icon: <FormOutlined /> },
   { to: "/materials", label: "资料", icon: <BookOutlined /> },
+  { to: "/trace", label: "轨迹", icon: <LineChartOutlined /> },
   { to: "/blackboard", label: "黑板", icon: <ProjectOutlined /> },
 ];
 
@@ -52,7 +63,13 @@ function Brand() {
   );
 }
 
-function Navigation({ mobile = false }: { mobile?: boolean }) {
+function Navigation({
+  mobile = false,
+  demo = false,
+}: {
+  mobile?: boolean;
+  demo?: boolean;
+}) {
   return (
     <nav className={mobile ? "nav nav--mobile" : "nav"} aria-label="主导航">
       {navigation.map((item) => (
@@ -60,7 +77,7 @@ function Navigation({ mobile = false }: { mobile?: boolean }) {
           key={item.to}
           className={({ isActive }) => `nav__item${isActive ? " is-active" : ""}`}
           end={item.to === "/"}
-          to={item.to}
+          to={demo ? `${item.to}?demo=1` : item.to}
         >
           {item.icon}
           <span>{item.label}</span>
@@ -73,11 +90,20 @@ function Navigation({ mobile = false }: { mobile?: boolean }) {
 export function AppLayout() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const demoMode = searchParams.get("demo") === "1";
 
   useEffect(() => {
     setMobileNavOpen(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [location.pathname]);
+
+  useEffect(() => {
+    void createSession().catch(() => {
+      // The interceptor already surfaced the service error.
+    });
+  }, []);
 
   return (
     <div className="app-shell">
@@ -85,7 +111,7 @@ export function AppLayout() {
         <div className="topbar__left">
           <Brand />
           <span className="topbar__divider" aria-hidden="true" />
-          <Navigation />
+          <Navigation demo={demoMode} />
         </div>
 
         <div className="topbar__actions">
@@ -94,7 +120,21 @@ export function AppLayout() {
               {isMockMode() ? "Mock 模式" : "API 模式"}
             </Tag>
           </Tooltip>
-          <Tag className="phase-tag">F1 基础壳</Tag>
+          <Tag className="phase-tag">F2–F5</Tag>
+          <Tooltip title="打开 3 分钟演示控制条">
+            <Button
+              className="demo-mode-button"
+              type={searchParams.get("demo") === "1" ? "primary" : "default"}
+              icon={<PlayCircleOutlined />}
+              onClick={() => {
+                const next = new URLSearchParams(searchParams);
+                next.set("demo", "1");
+                navigate({ pathname: "/", search: `?${next.toString()}` });
+              }}
+            >
+              演示
+            </Button>
+          </Tooltip>
           <Button
             className="mobile-menu-button"
             type="text"
@@ -115,6 +155,7 @@ export function AppLayout() {
           <AppstoreOutlined /> React 18 · Vite · TypeScript · Ant Design 5
         </span>
       </footer>
+      <DemoBar />
 
       <Drawer
         className="mobile-drawer"
@@ -124,7 +165,7 @@ export function AppLayout() {
         open={mobileNavOpen}
         onClose={() => setMobileNavOpen(false)}
       >
-        <Navigation mobile />
+        <Navigation mobile demo={demoMode} />
         <div className="mobile-drawer__note">
           <strong>F1 基础工程</strong>
           <p>F2 将在此壳内接入场景向导、冲突裁决、黑板与练习 Mock 主路径。</p>

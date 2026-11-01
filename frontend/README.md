@@ -7,17 +7,19 @@
 
 ## 当前状态
 
-已完成 Issue `#6 [前端][F1] Vite 工程初始化与路由布局`：
+F1–F5 前端主路径已落地：
 
-- Vite + React 18 + TypeScript 工程
-- Ant Design 5 主题与响应式顶栏
-- `/` `/chat` `/plan` `/practice` `/materials` `/blackboard` 六个路由
-- Axios 实例和统一错误提示
-- Zustand 场景状态骨架
-- `src/types/api.ts` 后端业务 API + Agent 响应类型初版
-- `VITE_API_BASE` / `VITE_USE_MOCK` 环境变量
+- Vite + React 18 + TypeScript + Ant Design 5
+- `/`、`/chat`、`/plan`、`/practice`、`/materials`、`/trace`、`/blackboard`
+- 双场景向导、Mock 计划冲突、用户裁决与二次审计
+- 练习 passed / abstain、计算检验轨迹和作答记录
+- 黑板条目过滤与 resolve
+- 资料查询与筛选、学习轨迹、结构化对话
+- Axios 业务 API / AI 网关封装，统一错误提示
+- Zustand + localStorage 学习状态
+- `/?demo=1` 三分钟演示控制条：冲突、弃答、时间跳跃、重置
 
-当前各业务页是明确标注的 F1 占位页。场景、计划冲突、黑板和练习 Mock 主路径属于 F2，不在本 Issue 中伪造为已完成。
+Mock 数据位于 `src/mocks`，改编自 `agent/examples`。关闭 `VITE_USE_MOCK` 后，页面经 backend 的 CRUD 与 `/api/ai/{intent}` 网关取真实数据。
 
 ## 启动
 
@@ -32,6 +34,14 @@ npm run dev
 npm run typecheck
 npm run build
 ```
+
+三分钟演示入口：
+
+```text
+http://localhost:5173/?demo=1
+```
+
+完整操作步骤见 [`docs/演示脚本.md`](../docs/演示脚本.md)。
 
 ## 环境变量
 
