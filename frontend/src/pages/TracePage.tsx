@@ -17,6 +17,7 @@ import {
 import { Link } from "react-router-dom";
 
 import { useLearningStore } from "../stores/useLearningStore";
+import { NextStepCard } from "../components/NextStepCard";
 
 const mastery = [
   { label: "极限定义", value: 86, color: "#2f8667" },
@@ -160,6 +161,15 @@ export function TracePage() {
         </div>
         <Tag color="green">{blackboard.length} 条黑板事件可供追溯</Tag>
       </Card>
+
+      <NextStepCard
+        eyebrow="NEXT · PLAN"
+        title="把轨迹反馈带回计划"
+        description="错因、提示依赖与中断信号会参与下一轮计划审计，而不是停留在统计页。"
+        label="返回计划"
+        to="/plan"
+        icon={<LineChartOutlined />}
+      />
     </div>
   );
 }

@@ -20,6 +20,7 @@ import { Link } from "react-router-dom";
 
 import { agentErrorMessage, invokeAgent } from "../api/ai";
 import { submitAttempt } from "../api/backend";
+import { NextStepCard } from "../components/NextStepCard";
 import { useLearningStore } from "../stores/useLearningStore";
 
 export function PracticePage() {
@@ -263,6 +264,15 @@ export function PracticePage() {
           </Card>
         </div>
       </section>
+
+      <NextStepCard
+        eyebrow="NEXT · TRACE"
+        title="让这次作答进入学习轨迹"
+        description="查看本次正确率、耗时、错因和校验结果，下一轮计划会读取这些信号。"
+        label="查看学习轨迹"
+        to="/trace"
+        icon={<HistoryOutlined />}
+      />
     </div>
   );
 }

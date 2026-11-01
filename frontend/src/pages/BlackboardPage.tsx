@@ -23,6 +23,7 @@ import {
   resolveBlackboardEntry,
 } from "../api/backend";
 import { BlackboardPanel } from "../components/BlackboardPanel";
+import { NextStepCard } from "../components/NextStepCard";
 import { useLearningStore } from "../stores/useLearningStore";
 import type { BlackboardEntry } from "../types/api";
 
@@ -165,6 +166,15 @@ export function BlackboardPage() {
       </Card>
 
       <BlackboardPanel filter={filter} onResolve={handleResolve} />
+
+      <NextStepCard
+        eyebrow="NEXT · PLAN"
+        title="把用户裁决写回学习计划"
+        description="黑板上的冲突和干预结论会重新进入计划页，由你确认后再持久化。"
+        label="返回计划"
+        to="/plan"
+        icon={<ProjectOutlined />}
+      />
     </div>
   );
 }

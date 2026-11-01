@@ -24,6 +24,7 @@ import {
 import { isMockMode } from "../../api/client";
 import { createSession } from "../../api/backend";
 import { DemoBar } from "../DemoBar";
+import { LearningJourney } from "../LearningJourney";
 
 const navigation = [
   { to: "/", label: "首页", icon: <HomeOutlined /> },
@@ -120,7 +121,7 @@ export function AppLayout() {
               {isMockMode() ? "Mock 模式" : "API 模式"}
             </Tag>
           </Tooltip>
-          <Tag className="phase-tag">F2–F5</Tag>
+          <Tag className="phase-tag">MVP · 全链路</Tag>
           <Tooltip title="打开 3 分钟演示控制条">
             <Button
               className="demo-mode-button"
@@ -132,7 +133,7 @@ export function AppLayout() {
                 navigate({ pathname: "/", search: `?${next.toString()}` });
               }}
             >
-              演示
+              <span className="demo-mode-label">演示</span>
             </Button>
           </Tooltip>
           <Button
@@ -144,6 +145,8 @@ export function AppLayout() {
           />
         </div>
       </header>
+
+      <LearningJourney />
 
       <main className="app-content">
         <Outlet />
@@ -167,8 +170,8 @@ export function AppLayout() {
       >
         <Navigation mobile demo={demoMode} />
         <div className="mobile-drawer__note">
-          <strong>F1 基础工程</strong>
-          <p>F2 将在此壳内接入场景向导、冲突裁决、黑板与练习 Mock 主路径。</p>
+          <strong>完整学习闭环</strong>
+          <p>场景、计划、练习、轨迹与黑板共享同一份状态；智能不可用时仍保留传统学习路径。</p>
         </div>
       </Drawer>
     </div>

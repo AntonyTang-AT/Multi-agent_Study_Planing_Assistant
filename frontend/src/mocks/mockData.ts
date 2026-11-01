@@ -33,7 +33,7 @@ export const demoQuestion: DemoQuestion = {
   assumptions: ["使用 sin(3x) 的三阶泰勒展开"],
   error_tags: ["formula_misuse"],
   verify_hint: {
-    expr: "limit((sin(3*x)-3*x)/x^3, x, 0)",
+    expr: "limit((sin(3*x)-3*x)/x**3, x, 0)",
     expected: "-9/2",
   },
   source: "自编演示题 · 对齐第一重要极限",
