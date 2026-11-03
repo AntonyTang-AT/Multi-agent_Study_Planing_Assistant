@@ -26,6 +26,7 @@ import {
 
 import { isMockMode } from "../../api/client";
 import { useAuthStore } from "../../stores/useAuthStore";
+import { useLearningStore } from "../../stores/useLearningStore";
 import { DemoBar } from "../DemoBar";
 import { DemoGuide } from "../DemoGuide";
 import { LearningJourney } from "../LearningJourney";
@@ -101,11 +102,17 @@ export function AppLayout() {
   const demoMode = searchParams.get("demo") === "1";
   const user = useAuthStore((s) => s.user);
   const clearAuth = useAuthStore((s) => s.clearAuth);
+  const hydrateForUser = useLearningStore((s) => s.hydrateForUser);
+  const resetDemo = useLearningStore((s) => s.resetDemo);
 
   useEffect(() => {
     setMobileNavOpen(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [location.pathname]);
+
+  useEffect(() => {
+    void hydrateForUser(user?.id ?? null);
+  }, [user?.id, hydrateForUser]);
 
   const enableDemo = () => {
     if (!user) {
@@ -177,6 +184,8 @@ export function AppLayout() {
                     label: "退出登录",
                     onClick: () => {
                       clearAuth();
+                      resetDemo();
+                      void hydrateForUser(null);
                       navigate("/login", { replace: true });
                     },
                   },

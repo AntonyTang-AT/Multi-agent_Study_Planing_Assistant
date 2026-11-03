@@ -72,7 +72,7 @@ export function BlackboardPanel({
             </div>
             <strong>{entry.summary}</strong>
             <div className="blackboard-entry__evidence">
-              {entry.evidence_refs.slice(0, 3).map((reference) => (
+              {(entry.evidence_refs ?? []).slice(0, 3).map((reference) => (
                 <span key={reference}>{reference}</span>
               ))}
             </div>

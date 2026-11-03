@@ -89,6 +89,12 @@ export async function saveCurrentPlan(plan: Plan): Promise<Plan> {
   return response.data;
 }
 
+export async function fetchAttempts(): Promise<Attempt[]> {
+  if (appEnv.useMock) return [];
+  const response = await apiClient.get<Attempt[]>("/api/attempts");
+  return response.data;
+}
+
 export async function submitAttempt(
   attempt: AttemptRequest,
 ): Promise<Attempt> {

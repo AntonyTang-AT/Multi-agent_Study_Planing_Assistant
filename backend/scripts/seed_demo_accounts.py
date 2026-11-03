@@ -3,13 +3,14 @@
 用法（在 backend/ 下）::
 
     python -m scripts.seed_demo_accounts
+
+每个学生账号带完整 PlanTask、作答痕迹与黑板条目，便于答辩切换身份展示。
 """
 
 from __future__ import annotations
 
 import json
 import sys
-import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -17,7 +18,7 @@ BACKEND_ROOT = Path(__file__).resolve().parents[1]
 if str(BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(BACKEND_ROOT))
 
-from sqlalchemy import select  # noqa: E402
+from sqlalchemy import delete, select  # noqa: E402
 
 from app.db.models import AiCallLog, Attempt, BlackboardEntry, Plan, User  # noqa: E402
 from app.db.session import SessionLocal, init_db  # noqa: E402
@@ -66,6 +67,38 @@ ACCOUNTS = [
     },
 ]
 
+MATH_OPTIONS = [
+    {"id": "extend_time", "label": "延长每日学习时间"},
+    {"id": "reduce_depth", "label": "降低复习深度"},
+    {"id": "adjust_goal", "label": "调整目标"},
+]
+
+
+def _task(
+    day: int,
+    action: str,
+    obj: str,
+    minutes: int,
+    criteria: str,
+    load: str,
+    knowledge_id: str,
+    subject: str,
+    error_tag: str | None = None,
+) -> dict:
+    item = {
+        "day": day,
+        "action": action,
+        "object": obj,
+        "minutes": minutes,
+        "completion_criteria": criteria,
+        "load": load,
+        "knowledge_ids": [knowledge_id],
+        "subject": subject,
+    }
+    if error_tag:
+        item["error_tag"] = error_tag
+    return item
+
 
 def _upsert_user(db, spec: dict) -> User:
     user = db.scalar(select(User).where(User.username == spec["username"]))
@@ -86,215 +119,414 @@ def _upsert_user(db, spec: dict) -> User:
     return user
 
 
-def _seed_math_conflict(db, user_id: str) -> None:
-    plan = {
-        "scenario": "final_review",
-        "goal": "期末过线",
-        "daily_minutes_budget": 45,
-        "days_left": 7,
-        "tasks": [
-            {"day": 1, "title": "极限定义", "minutes": 40},
-            {"day": 2, "title": "重要极限", "minutes": 45},
-            {"day": 3, "title": "连续性", "minutes": 60},
-        ],
-    }
+def _upsert_plan(db, user_id: str, plan: dict) -> None:
     row = db.scalar(select(Plan).where(Plan.user_id == user_id))
+    payload = json.dumps(plan, ensure_ascii=False)
     if row is None:
-        db.add(Plan(user_id=user_id, snapshot=json.dumps(plan, ensure_ascii=False)))
+        db.add(Plan(user_id=user_id, snapshot=payload))
     else:
-        row.snapshot = json.dumps(plan, ensure_ascii=False)
+        row.snapshot = payload
 
-    eid = "bb_seed_math_conflict"
-    bb = db.get(BlackboardEntry, eid)
-    fields = {
-        "user_id": user_id,
-        "type": "conflict",
-        "summary": "计划第3天超出每日45分钟预算",
-        "severity": "high",
-        "evidence_refs": json.dumps(
-            ["plan#day3", "constraint#daily_minutes"], ensure_ascii=False
-        ),
-        "status": "open",
-    }
+
+def _upsert_bb(db, entry_id: str, fields: dict) -> None:
+    bb = db.get(BlackboardEntry, entry_id)
     if bb is None:
-        db.add(BlackboardEntry(id=eid, **fields))
+        db.add(BlackboardEntry(id=entry_id, **fields))
     else:
-        for k, v in fields.items():
-            setattr(bb, k, v)
+        for key, value in fields.items():
+            setattr(bb, key, value)
 
-    n = len(list(db.scalars(select(Attempt).where(Attempt.user_id == user_id)).all()))
-    if n == 0:
-        now = datetime.now(timezone.utc)
-        for i, (qid, correct) in enumerate(
-            [
-                ("math_a1c01_0001", False),
-                ("math_a1c01_0002", True),
-                ("math_a1c02_0001", None),
-            ]
-        ):
-            db.add(
-                Attempt(
-                    id=str(uuid.uuid4()),
-                    user_id=user_id,
-                    question_id=qid,
-                    answer="demo",
-                    is_correct=correct,
-                    duration_ms=1000 + i * 200,
-                    created_at=now - timedelta(days=2 - i),
-                )
-            )
 
+def _replace_attempts(db, user_id: str, rows: list[dict]) -> None:
+    db.execute(delete(Attempt).where(Attempt.user_id == user_id))
+    for row in rows:
+        db.add(Attempt(**row))
+
+
+def _ensure_ai_log(
+    db,
+    *,
+    user_id: str,
+    intent: str,
+    request_id: str,
+    status: str,
+    response: dict,
+) -> None:
+    exists = db.scalar(
+        select(AiCallLog).where(AiCallLog.request_id == request_id)
+    )
+    if exists is not None:
+        return
     db.add(
         AiCallLog(
             user_id=user_id,
-            intent="create_plan",
-            request_id="seed_math_cp",
-            status="conflict",
+            intent=intent,
+            request_id=request_id,
+            status=status,
             request_body="{}",
-            response_body=json.dumps({"status": "conflict"}, ensure_ascii=False),
+            response_body=json.dumps(response, ensure_ascii=False),
         )
+    )
+
+
+def _seed_math_conflict(db, user_id: str) -> None:
+    """期末高数：第 3 天超时冲突，等待用户裁决。"""
+    plan = {
+        "scenario": "final_review",
+        "goal": "期末过线并补齐极限链路",
+        "daily_minutes_budget": 45,
+        "days_left": 7,
+        "tasks": [
+            _task(
+                1,
+                "回看",
+                "极限定义与邻域语言",
+                20,
+                "能用 ε-δ 语言口述极限定义，并写出 2 个反例",
+                "low",
+                "math.a1.ch02",
+                "math",
+            ),
+            _task(
+                2,
+                "练习",
+                "重要极限与夹逼定理",
+                40,
+                "完成 4 道基础题，标出放缩方向",
+                "medium",
+                "math.a1.ch02",
+                "math",
+                error_tag="formula_misuse",
+            ),
+            _task(
+                3,
+                "整理",
+                "连续性证明卡片（高负荷）",
+                60,
+                "完成证明卡片并标注依据；当前超出每日 45 分钟预算",
+                "high",
+                "math.a1.ch04",
+                "math",
+            ),
+        ],
+        "_demo": {
+            "plan_status": "conflict",
+            "plan_message": "第 3 天任务 60 分钟超出每日 45 分钟硬约束，请选择裁决项",
+            "user_options": MATH_OPTIONS,
+            "selected_option_id": "reduce_depth",
+            "show_intervention": False,
+            "setup": {
+                "mode": "final_review",
+                "subject": "math",
+                "dailyMinutes": 45,
+                "examDate": "2026-11-22",
+                "chapter": "第 2 章 · 极限与连续",
+            },
+        },
+    }
+    _upsert_plan(db, user_id, plan)
+    _upsert_bb(
+        db,
+        "bb_seed_math_conflict",
+        {
+            "user_id": user_id,
+            "type": "conflict",
+            "summary": "计划第 3 天（连续性证明）60 分钟超出每日 45 分钟预算",
+            "severity": "high",
+            "evidence_refs": json.dumps(
+                ["plan#day3", "constraint#daily_minutes<=45"], ensure_ascii=False
+            ),
+            "status": "open",
+            "resolution": None,
+        },
+    )
+    now = datetime.now(timezone.utc)
+    _replace_attempts(
+        db,
+        user_id,
+        [
+            {
+                "id": "att_math_001",
+                "user_id": user_id,
+                "question_id": "math_a1c01_0001",
+                "answer": "误用洛必达",
+                "is_correct": False,
+                "error_tag": "formula_misuse",
+                "duration_ms": 42000,
+                "created_at": now - timedelta(days=2, hours=3),
+            },
+            {
+                "id": "att_math_002",
+                "user_id": user_id,
+                "question_id": "math_a1c01_0002",
+                "answer": "夹逼成立",
+                "is_correct": True,
+                "error_tag": None,
+                "duration_ms": 28000,
+                "created_at": now - timedelta(days=1, hours=5),
+            },
+            {
+                "id": "att_math_003",
+                "user_id": user_id,
+                "question_id": "math_a1c02_0001",
+                "answer": "abstain",
+                "is_correct": None,
+                "error_tag": "uncertain_assumption",
+                "duration_ms": 15000,
+                "created_at": now - timedelta(hours=6),
+            },
+        ],
+    )
+    _ensure_ai_log(
+        db,
+        user_id=user_id,
+        intent="create_plan",
+        request_id="seed_math_cp",
+        status="conflict",
+        response={"status": "conflict", "message": "daily budget overflow"},
     )
 
 
 def _seed_physics_ok(db, user_id: str) -> None:
+    """大物跟课：计划已通过，作答混杂，存在结构化质疑。"""
     plan = {
         "scenario": "catch_up",
-        "goal": "跟上力学进度",
+        "goal": "跟上力学进度并补齐受力分析",
         "daily_minutes_budget": 60,
         "days_left": 10,
         "tasks": [
-            {"day": 1, "title": "质点运动", "minutes": 50},
-            {"day": 2, "title": "牛顿定律", "minutes": 55},
+            _task(
+                1,
+                "回看",
+                "质点运动学：位移与速度",
+                25,
+                "能区分平均速度与瞬时速度，完成 1 页笔记",
+                "low",
+                "physics.mech.ch01",
+                "physics",
+            ),
+            _task(
+                2,
+                "练习",
+                "牛顿定律受力分析",
+                50,
+                "独立画出 3 个受力图并写出方程",
+                "medium",
+                "physics.mech.ch02",
+                "physics",
+                error_tag="missing_assumption",
+            ),
+            _task(
+                3,
+                "整理",
+                "摩擦力与斜面综合",
+                40,
+                "整理易错假设清单，标注何时可忽略摩擦",
+                "medium",
+                "physics.mech.ch02",
+                "physics",
+            ),
         ],
+        "_demo": {
+            "plan_status": "ok",
+            "plan_message": "计划已通过规则审计，可继续练习验证",
+            "user_options": [],
+            "selected_option_id": "",
+            "show_intervention": False,
+            "setup": {
+                "mode": "catch_up",
+                "subject": "physics",
+                "dailyMinutes": 60,
+                "examDate": "2026-12-10",
+                "chapter": "第 2 章 · 牛顿运动定律",
+            },
+        },
     }
-    row = db.scalar(select(Plan).where(Plan.user_id == user_id))
-    if row is None:
-        db.add(Plan(user_id=user_id, snapshot=json.dumps(plan, ensure_ascii=False)))
-    else:
-        row.snapshot = json.dumps(plan, ensure_ascii=False)
-
-    n = len(list(db.scalars(select(Attempt).where(Attempt.user_id == user_id)).all()))
-    if n == 0:
-        now = datetime.now(timezone.utc)
-        for i, (qid, correct) in enumerate(
-            [
-                ("physics_mech_0001", True),
-                ("physics_mech_0002", True),
-                ("physics_mech_0003", False),
-                ("physics_mech_0004", None),
-            ]
-        ):
-            db.add(
-                Attempt(
-                    id=str(uuid.uuid4()),
-                    user_id=user_id,
-                    question_id=qid,
-                    answer="demo",
-                    is_correct=correct,
-                    error_tag="calculation" if correct is False else None,
-                    duration_ms=800 + i * 150,
-                    created_at=now - timedelta(days=i),
-                )
-            )
-
-    eid = "bb_seed_physics_challenge"
-    if db.get(BlackboardEntry, eid) is None:
-        db.add(
-            BlackboardEntry(
-                id=eid,
-                user_id=user_id,
-                type="challenge",
-                summary="受力分析遗漏摩擦力假设",
-                severity="medium",
-                evidence_refs=json.dumps(["attempt#physics_mech_0003"], ensure_ascii=False),
-                status="open",
-            )
-        )
-
-    db.add(
-        AiCallLog(
-            user_id=user_id,
-            intent="verify_answer",
-            request_id="seed_phy_vf",
-            status="ok",
-            request_body="{}",
-            response_body=json.dumps({"status": "ok"}, ensure_ascii=False),
-        )
+    _upsert_plan(db, user_id, plan)
+    _upsert_bb(
+        db,
+        "bb_seed_physics_challenge",
+        {
+            "user_id": user_id,
+            "type": "challenge",
+            "summary": "受力分析草稿遗漏摩擦力假设，校验 Agent 发起结构化质疑",
+            "severity": "medium",
+            "evidence_refs": json.dumps(
+                ["attempt#physics_mech_0003", "verify#assumption_check"],
+                ensure_ascii=False,
+            ),
+            "status": "open",
+            "resolution": None,
+        },
+    )
+    now = datetime.now(timezone.utc)
+    _replace_attempts(
+        db,
+        user_id,
+        [
+            {
+                "id": "att_phy_001",
+                "user_id": user_id,
+                "question_id": "physics_mech_0001",
+                "answer": "v=at",
+                "is_correct": True,
+                "error_tag": None,
+                "duration_ms": 18000,
+                "created_at": now - timedelta(days=3),
+            },
+            {
+                "id": "att_phy_002",
+                "user_id": user_id,
+                "question_id": "physics_mech_0002",
+                "answer": "ΣF=ma",
+                "is_correct": True,
+                "error_tag": None,
+                "duration_ms": 22000,
+                "created_at": now - timedelta(days=2),
+            },
+            {
+                "id": "att_phy_003",
+                "user_id": user_id,
+                "question_id": "physics_mech_0003",
+                "answer": "忽略摩擦",
+                "is_correct": False,
+                "error_tag": "missing_assumption",
+                "duration_ms": 35000,
+                "created_at": now - timedelta(days=1),
+            },
+            {
+                "id": "att_phy_004",
+                "user_id": user_id,
+                "question_id": "physics_mech_0004",
+                "answer": "待确认",
+                "is_correct": None,
+                "error_tag": "uncertain_assumption",
+                "duration_ms": 12000,
+                "created_at": now - timedelta(hours=4),
+            },
+        ],
+    )
+    _ensure_ai_log(
+        db,
+        user_id=user_id,
+        intent="verify_answer",
+        request_id="seed_phy_vf",
+        status="ok",
+        response={"status": "ok", "verdict": "doubt"},
     )
 
 
 def _seed_catchup_intervention(db, user_id: str) -> None:
+    """进度落后：时间跳跃后触发主动干预。"""
     plan = {
         "scenario": "catch_up",
-        "goal": "两天未练后的干预",
+        "goal": "两天未练后的低门槛恢复",
         "daily_minutes_budget": 40,
         "days_left": 5,
-        "tasks": [{"day": 1, "title": "极限复习", "minutes": 35}],
+        "tasks": [
+            _task(
+                1,
+                "回看",
+                "极限复习 · 10 分钟热身",
+                15,
+                "重读昨日错题卡片，写出 1 条恢复动作",
+                "low",
+                "math.a1.ch02",
+                "math",
+            ),
+            _task(
+                2,
+                "练习",
+                "基础极限计算（缩短版）",
+                25,
+                "完成 2 道低难度题即可结束本日",
+                "low",
+                "math.a1.ch02",
+                "math",
+            ),
+        ],
+        "_demo": {
+            "plan_status": "ok",
+            "plan_message": "已生成恢复计划；请先处理主动干预卡片",
+            "user_options": [],
+            "selected_option_id": "",
+            "show_intervention": True,
+            "setup": {
+                "mode": "catch_up",
+                "subject": "math",
+                "dailyMinutes": 40,
+                "examDate": "2026-11-30",
+                "chapter": "第 2 章 · 极限（补漏）",
+            },
+        },
     }
-    row = db.scalar(select(Plan).where(Plan.user_id == user_id))
-    if row is None:
-        db.add(Plan(user_id=user_id, snapshot=json.dumps(plan, ensure_ascii=False)))
-    else:
-        row.snapshot = json.dumps(plan, ensure_ascii=False)
-
-    eid = "bb_seed_catchup_intervention"
-    if db.get(BlackboardEntry, eid) is None:
-        db.add(
-            BlackboardEntry(
-                id=eid,
-                user_id=user_id,
-                type="intervention",
-                summary="检测到两天未练习，建议缩短单次任务并恢复节奏",
-                severity="medium",
-                evidence_refs=json.dumps(
-                    ["demo#time_jump_days", "trace#idle"], ensure_ascii=False
-                ),
-                status="open",
-            )
-        )
-
-    n = len(list(db.scalars(select(Attempt).where(Attempt.user_id == user_id)).all()))
-    if n == 0:
-        db.add(
-            Attempt(
-                id=str(uuid.uuid4()),
-                user_id=user_id,
-                question_id="math_a1c01_0001",
-                answer="skip",
-                is_correct=None,
-                duration_ms=500,
-                created_at=datetime.now(timezone.utc) - timedelta(days=3),
-            )
-        )
-
-    db.add(
-        AiCallLog(
-            user_id=user_id,
-            intent="proactive_intervention",
-            request_id="seed_catchup_pi",
-            status="need_user",
-            request_body="{}",
-            response_body=json.dumps({"status": "need_user"}, ensure_ascii=False),
-        )
+    _upsert_plan(db, user_id, plan)
+    _upsert_bb(
+        db,
+        "bb_seed_catchup_intervention",
+        {
+            "user_id": user_id,
+            "type": "intervention",
+            "summary": "检测到连续 2 天未练习（演示时间跳跃 +3 天），建议缩短单次任务并恢复节奏",
+            "severity": "medium",
+            "evidence_refs": json.dumps(
+                ["demo#time_jump_days=3", "trace#idle", "plan#recover"],
+                ensure_ascii=False,
+            ),
+            "status": "open",
+            "resolution": None,
+        },
+    )
+    now = datetime.now(timezone.utc)
+    _replace_attempts(
+        db,
+        user_id,
+        [
+            {
+                "id": "att_catch_001",
+                "user_id": user_id,
+                "question_id": "math_a1c01_0001",
+                "answer": "skip",
+                "is_correct": None,
+                "error_tag": "motivation_drop",
+                "duration_ms": 5000,
+                "created_at": now - timedelta(days=4),
+            },
+            {
+                "id": "att_catch_002",
+                "user_id": user_id,
+                "question_id": "math_a1c01_0002",
+                "answer": "半对",
+                "is_correct": False,
+                "error_tag": "formula_misuse",
+                "duration_ms": 20000,
+                "created_at": now - timedelta(days=3, hours=8),
+            },
+        ],
+    )
+    _ensure_ai_log(
+        db,
+        user_id=user_id,
+        intent="proactive_intervention",
+        request_id="seed_catchup_pi",
+        status="need_user",
+        response={"status": "need_user", "message": "resume with short task"},
     )
 
 
 def _seed_extra_distribution(db) -> None:
-    """补充若干合成 attempts，让管理员看板分布更饱满。"""
+    """补充合成 attempts，让管理员看板近 7 日分布更饱满。"""
     now = datetime.now(timezone.utc)
-    synthetic_user = db.get(User, "u_student_math")
-    if synthetic_user is None:
-        return
-    # add dated attempts across last 7 days if overall attempts low
-    total = len(list(db.scalars(select(Attempt)).all()))
-    if total >= 20:
-        return
     for day in range(7):
         for j in range(2):
+            aid = f"att_synth_{day}_{j}"
+            if db.get(Attempt, aid) is not None:
+                continue
+            uid = "u_student_math" if j % 2 == 0 else "u_student_physics"
             db.add(
                 Attempt(
-                    id=str(uuid.uuid4()),
-                    user_id="u_student_math" if j % 2 == 0 else "u_student_physics",
+                    id=aid,
+                    user_id=uid,
                     question_id=(
                         f"math_synth_{day}_{j}"
                         if j % 2 == 0
@@ -303,7 +535,7 @@ def _seed_extra_distribution(db) -> None:
                     answer="synth",
                     is_correct=bool((day + j) % 3),
                     duration_ms=900,
-                    created_at=now - timedelta(days=day, hours=j),
+                    created_at=now - timedelta(days=day, hours=j + 1),
                 )
             )
 

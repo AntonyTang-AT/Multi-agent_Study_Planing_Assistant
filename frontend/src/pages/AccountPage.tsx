@@ -1,14 +1,29 @@
-import { Button, Card, Form, Input, Typography, message } from "antd";
+import { Button, Card, Form, Input, Tag, Typography, message } from "antd";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 import { changePassword } from "../api/auth";
 import { useAuthStore } from "../stores/useAuthStore";
+import { useLearningStore } from "../stores/useLearningStore";
+
+const scenarioLabel: Record<string, string> = {
+  final_review: "期末复习",
+  catch_up: "跟课补漏",
+};
 
 export function AccountPage() {
   const user = useAuthStore((s) => s.user);
+  const plan = useLearningStore((s) => s.plan);
+  const planStatus = useLearningStore((s) => s.planStatus);
+  const setup = useLearningStore((s) => s.setup);
+  const attempts = useLearningStore((s) => s.attempts);
+  const blackboard = useLearningStore((s) => s.blackboard);
   const [loading, setLoading] = useState(false);
 
   if (!user) return null;
+
+  const openBoard = blackboard.filter((item) => item.status === "open");
+  const passed = attempts.filter((item) => item.is_correct === true).length;
 
   const onFinish = async (values: {
     old_password: string;
@@ -30,7 +45,7 @@ export function AccountPage() {
       <header className="page-header">
         <Typography.Title level={2}>账号</Typography.Title>
         <Typography.Paragraph type="secondary">
-          查看当前登录身份，并修改密码。个人计划 / 黑板 / 轨迹按用户隔离存储。
+          当前登录身份与个人学习痕迹。计划 / 黑板 / 轨迹按用户隔离存储。
         </Typography.Paragraph>
       </header>
 
@@ -49,6 +64,48 @@ export function AccountPage() {
         </p>
       </Card>
 
+      {user.role !== "admin" ? (
+        <Card
+          className="surface-card"
+          title="本账号学习快照"
+          extra={
+            <Link to="/plan">
+              <Button type="link">查看计划</Button>
+            </Link>
+          }
+        >
+          <p>
+            <strong>场景</strong>：
+            {scenarioLabel[setup.mode] || setup.mode} · {setup.subject} ·{" "}
+            {setup.chapter}
+          </p>
+          <p>
+            <strong>计划目标</strong>：{plan?.goal || "尚未生成计划"}
+          </p>
+          <p>
+            <strong>状态</strong>：{" "}
+            <Tag color={planStatus === "conflict" ? "orange" : "green"}>
+              {planStatus === "conflict"
+                ? "冲突待裁决"
+                : plan
+                  ? "已有计划"
+                  : "空"}
+            </Tag>
+            <Tag>任务 {plan?.tasks.length ?? 0}</Tag>
+            <Tag>作答 {attempts.length}</Tag>
+            <Tag color="gold">开放黑板 {openBoard.length}</Tag>
+          </p>
+          <p>
+            <strong>作答通过</strong>：{passed} / {attempts.length}
+          </p>
+          {openBoard[0] ? (
+            <p>
+              <strong>待处理</strong>：{openBoard[0].summary}
+            </p>
+          ) : null}
+        </Card>
+      ) : null}
+
       <Card className="surface-card" title="修改密码">
         <Form layout="vertical" onFinish={onFinish} style={{ maxWidth: 420 }}>
           <Form.Item
@@ -63,7 +120,7 @@ export function AccountPage() {
             name="new_password"
             rules={[
               { required: true, message: "请输入新密码" },
-              { min: 6, message: "至少 6 位" },
+              { min: 4, message: "至少 4 位" },
             ]}
           >
             <Input.Password autoComplete="new-password" />

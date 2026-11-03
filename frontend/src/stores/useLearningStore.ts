@@ -2,11 +2,13 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 import {
+  loadWorkspaceSnapshot,
+  type WorkspaceSnapshot,
+} from "../api/workspace";
+import {
   demoQuestion,
-  initialBlackboard,
   type DemoQuestion,
 } from "../mocks/mockData";
-import { mockStoreHelpers } from "../mocks/mockAgent";
 import type {
   AgentDemoFlags,
   AgentResponse,
@@ -36,6 +38,8 @@ interface PracticeState {
 }
 
 interface LearningState {
+  hydratedUserId: string | null;
+  hydrating: boolean;
   setup: ScenarioSetup;
   plan: Plan | null;
   planStatus: "idle" | AgentStatus;
@@ -61,11 +65,14 @@ interface LearningState {
   mergeBlackboard: (entries: BlackboardEntry[]) => void;
   resolveEntry: (entryId: string) => void;
   addAttempt: (attempt: Attempt) => void;
+  setAttempts: (attempts: Attempt[]) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   setDemoFlag: (flag: keyof AgentDemoFlags, value: boolean | number) => void;
   closeIntervention: () => void;
   resetDemo: () => void;
+  applyWorkspace: (userId: string, snapshot: WorkspaceSnapshot) => void;
+  hydrateForUser: (userId: string | null) => Promise<void>;
 }
 
 const defaultSetup: ScenarioSetup = {
@@ -94,14 +101,17 @@ const mergeEntries = (
 
 export const useLearningStore = create<LearningState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
+      hydratedUserId: null,
+      hydrating: false,
       setup: defaultSetup,
       plan: null,
       planStatus: "idle",
       planMessage: "",
       userOptions: [],
       selectedOptionId: "reduce_depth",
-      blackboard: initialBlackboard,
+      // 空黑板：登录后按用户从后端灌入，避免所有账号看到同一份 mock
+      blackboard: [],
       question: demoQuestion,
       practice: idlePractice,
       attempts: [],
@@ -201,6 +211,7 @@ export const useLearningStore = create<LearningState>()(
         })),
       addAttempt: (attempt) =>
         set((state) => ({ attempts: [attempt, ...state.attempts].slice(0, 50) })),
+      setAttempts: (attempts) => set({ attempts }),
       setLoading: (loading) => set({ loading }),
       setError: (error) => set({ error }),
       setDemoFlag: (flag, value) =>
@@ -218,7 +229,7 @@ export const useLearningStore = create<LearningState>()(
           planMessage: "",
           userOptions: [],
           selectedOptionId: "reduce_depth",
-          blackboard: mockStoreHelpers.initialBlackboard,
+          blackboard: [],
           practice: idlePractice,
           attempts: [],
           loading: false,
@@ -230,19 +241,79 @@ export const useLearningStore = create<LearningState>()(
           },
           showIntervention: false,
         }),
+      applyWorkspace: (userId, snapshot) =>
+        set({
+          hydratedUserId: userId,
+          hydrating: false,
+          plan: snapshot.plan,
+          planStatus: snapshot.planStatus,
+          planMessage: snapshot.planMessage,
+          userOptions: snapshot.userOptions,
+          selectedOptionId: snapshot.selectedOptionId || "reduce_depth",
+          blackboard: snapshot.blackboard,
+          attempts: snapshot.attempts,
+          showIntervention: snapshot.showIntervention,
+          setup: snapshot.setup ?? get().setup,
+          practice: idlePractice,
+          error: null,
+          demo: {
+            force_conflict: snapshot.planStatus === "conflict",
+            force_verify_fail: false,
+            time_jump_days: snapshot.demoTimeJumpDays,
+          },
+        }),
+      hydrateForUser: async (userId) => {
+        if (!userId) {
+          set({
+            hydratedUserId: null,
+            hydrating: false,
+            plan: null,
+            planStatus: "idle",
+            planMessage: "",
+            userOptions: [],
+            blackboard: [],
+            attempts: [],
+            showIntervention: false,
+          });
+          return;
+        }
+        if (get().hydratedUserId === userId && !get().hydrating) {
+          return;
+        }
+        set({
+          hydrating: true,
+          hydratedUserId: userId,
+          // 切换账号时先清空，避免短暂串数据
+          plan: null,
+          planStatus: "idle",
+          planMessage: "",
+          userOptions: [],
+          blackboard: [],
+          attempts: [],
+          showIntervention: false,
+        });
+        try {
+          const snapshot = await loadWorkspaceSnapshot();
+          if (get().hydratedUserId !== userId) return;
+          get().applyWorkspace(userId, snapshot);
+        } catch (error) {
+          if (get().hydratedUserId !== userId) return;
+          set({
+            hydrating: false,
+            hydratedUserId: null,
+            error:
+              error instanceof Error
+                ? error.message
+                : "无法加载当前账号的学习数据",
+          });
+        }
+      },
     }),
     {
-      name: "zhixu-learning-store-v2",
+      name: "zhixu-learning-store-v3",
+      // 个人数据一律以服务端为准；本地只保留场景表单草稿，避免账号串台
       partialize: (state) => ({
         setup: state.setup,
-        plan: state.plan,
-        planStatus: state.planStatus,
-        planMessage: state.planMessage,
-        userOptions: state.userOptions,
-        selectedOptionId: state.selectedOptionId,
-        blackboard: state.blackboard,
-        practice: state.practice,
-        attempts: state.attempts,
         demo: state.demo,
       }),
     },
