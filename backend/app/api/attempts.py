@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from fastapi import APIRouter, Depends
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.api.deps import require_user
@@ -12,6 +13,21 @@ from app.errors import AppError
 from app.schemas.crud import AttemptCreateBody, attempt_to_dict
 
 router = APIRouter(tags=["attempts"])
+
+
+@router.get("/api/attempts")
+def list_attempts(
+    user: User = Depends(require_user),
+    db: Session = Depends(get_db),
+) -> list[dict[str, Any]]:
+    """当前登录用户的作答轨迹（新 → 旧）。"""
+    rows = db.scalars(
+        select(Attempt)
+        .where(Attempt.user_id == user.id)
+        .order_by(Attempt.created_at.desc())
+        .limit(100)
+    ).all()
+    return [attempt_to_dict(row) for row in rows]
 
 
 @router.post("/api/attempts")

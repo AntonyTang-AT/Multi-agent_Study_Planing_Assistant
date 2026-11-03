@@ -29,7 +29,7 @@ import { BlackboardPanel } from "../components/BlackboardPanel";
 import { NextStepCard } from "../components/NextStepCard";
 import { UserOptionsCard } from "../components/UserOptionsCard";
 import { useLearningStore } from "../stores/useLearningStore";
-import type { PlanTask } from "../types/api";
+import type { Plan, PlanTask } from "../types/api";
 
 const groupTasks = (tasks: PlanTask[]) => {
   const groups = new Map<number, PlanTask[]>();
@@ -56,6 +56,7 @@ export function PlanPage() {
     (state) => state.selectedOptionId,
   );
   const loading = useLearningStore((state) => state.loading);
+  const hydrating = useLearningStore((state) => state.hydrating);
   const error = useLearningStore((state) => state.error);
   const demo = useLearningStore((state) => state.demo);
   const setSelectedOption = useLearningStore(
@@ -69,11 +70,16 @@ export function PlanPage() {
   const setError = useLearningStore((state) => state.setError);
 
   useEffect(() => {
-    if (plan) return;
+    if (plan || hydrating) return;
     let active = true;
     fetchCurrentPlan()
       .then((storedPlan) => {
-        if (active && storedPlan) setStoredPlan(storedPlan);
+        if (!active || !storedPlan) return;
+        const { _demo: _ignored, ...clean } = storedPlan as Plan & {
+          _demo?: unknown;
+        };
+        void _ignored;
+        setStoredPlan(clean);
       })
       .catch((requestError) => {
         if (active) setError(agentErrorMessage(requestError));
@@ -81,7 +87,20 @@ export function PlanPage() {
     return () => {
       active = false;
     };
-  }, [plan, setError, setStoredPlan]);
+  }, [plan, hydrating, setError, setStoredPlan]);
+
+  if (hydrating && !plan) {
+    return (
+      <div className="page-stack">
+        <section className="placeholder-panel">
+          <Empty
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+            description="正在读取当前账号的学习计划…"
+          />
+        </section>
+      </div>
+    );
+  }
 
   if (!plan) {
     return (
@@ -224,27 +243,36 @@ export function PlanPage() {
                 <strong>{String(day).padStart(2, "0")}</strong>
               </div>
               <div className="plan-day__tasks">
-                {tasks.map((task) => (
+                {tasks.map((task) => {
+                  const title =
+                    task.object ||
+                    (task as PlanTask & { title?: string }).title ||
+                    "未命名任务";
+                  const knowledgeIds = task.knowledge_ids ?? [];
+                  return (
                   <Card
                     className="plan-task-card"
-                    key={`${task.day}-${task.object}-${task.minutes}`}
+                    key={`${task.day}-${title}-${task.minutes}`}
                   >
                     <div className="plan-task-card__head">
                       <div>
-                        <Tag color="green">{task.action}</Tag>
-                        <h3>{task.object}</h3>
+                        <Tag color="green">{task.action || "任务"}</Tag>
+                        <h3>{title}</h3>
                       </div>
                       <span>{task.minutes} 分钟</span>
                     </div>
-                    <p>{task.completion_criteria}</p>
+                    <p>{task.completion_criteria || "按计划完成当日学习目标"}</p>
                     <div className="plan-task-card__meta">
-                      <Tag bordered={false}>{loadLabel[task.load] || task.load}</Tag>
-                      {task.knowledge_ids.map((knowledgeId) => (
+                      <Tag bordered={false}>
+                        {loadLabel[task.load] || task.load || "中负荷"}
+                      </Tag>
+                      {knowledgeIds.map((knowledgeId) => (
                         <span key={knowledgeId}>{knowledgeId}</span>
                       ))}
                     </div>
                   </Card>
-                ))}
+                  );
+                })}
               </div>
             </section>
           ))}
