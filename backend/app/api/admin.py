@@ -17,6 +17,12 @@ from app.db.session import get_db
 
 router = APIRouter(tags=["admin"])
 
+FOCUS_STUDENT_IDS = {
+    "u_student_math",
+    "u_student_physics",
+    "u_student_catchup",
+}
+
 
 @router.get("/api/admin/stats")
 def admin_stats(
@@ -118,13 +124,11 @@ def admin_stats(
         if tag:
             error_counter[str(tag)] += 1
 
-    # 学生活跃度
+    # 学生活跃度（重点学生置顶）
     student_rows = []
     for u in db.scalars(
         select(User).where(User.role == "student").order_by(User.created_at.desc())
     ).all():
-        if u.id == "u_stats_pad":
-            continue
         att_n = (
             db.scalar(
                 select(func.count())
@@ -157,12 +161,16 @@ def admin_stats(
                 "id": u.id,
                 "username": u.username,
                 "display_name": u.display_name,
+                "is_focus": u.id in FOCUS_STUDENT_IDS,
                 "attempts": int(att_n),
                 "passed": int(ok_n),
                 "pass_rate": round((ok_n / att_n) * 100, 1) if att_n else 0.0,
                 "open_reminders": int(open_bb),
             }
         )
+    student_rows.sort(
+        key=lambda row: (0 if row["is_focus"] else 1, -(row["attempts"] or 0))
+    )
 
     users_preview = [
         {
@@ -173,7 +181,6 @@ def admin_stats(
             "created_at": u.created_at.isoformat() if u.created_at else None,
         }
         for u in db.scalars(select(User).order_by(User.created_at.desc()).limit(20)).all()
-        if u.id != "u_stats_pad"
     ]
 
     correct_n = int(attempt_correctness.get("true", 0))
