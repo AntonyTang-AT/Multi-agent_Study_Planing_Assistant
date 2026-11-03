@@ -1,10 +1,12 @@
-"""预置演示账号与个人场景数据。
+"""预置演示账号与班级统计数据。
 
 用法（在 backend/ 下）::
 
     python -m scripts.seed_demo_accounts
 
-每个学生账号带完整计划、作答、黑板与个人画像，便于切换身份展示真实学习痕迹。
+- 3 名重点学生（math / phys / catch）：完整计划、作答、黑板与对话画像
+- 47 名班级同学（s01–s47）：计划 / 作答 / 少量提醒，供管理端统计
+- 合计 50 名学生；班级同学不编造对话内容
 """
 
 from __future__ import annotations
@@ -844,51 +846,277 @@ def _seed_catchup_intervention(db, user_id: str) -> None:
     )
 
 
-def _seed_admin_distribution(db) -> None:
-    """管理员看板用的匿名汇总痕迹，不污染三名学生的个人轨迹。"""
-    synth = db.get(User, "u_stats_pad")
-    if synth is None:
-        synth = User(
-            id="u_stats_pad",
-            username="stats_pad",
-            display_name="统计填充",
-            role="student",
-            password_hash=hash_password("unused-stats"),
-            demo_time_jump_days=0,
-        )
-        db.add(synth)
-        db.flush()
+FOCUS_USERNAMES = {"math", "phys", "catch"}
+FOCUS_IDS = {"u_student_math", "u_student_physics", "u_student_catchup"}
+COHORT_COUNT = 47  # 3 重点 + 47 班级同学 = 50
+COHORT_PASSWORD = "cohort"
+
+_SURNAMES = list("赵钱孙李周吴郑王冯陈褚卫蒋沈韩杨朱秦尤许何吕施张孔曹严华金魏陶姜")
+_GIVEN = [
+    "一诺",
+    "子墨",
+    "雨桐",
+    "浩然",
+    "思远",
+    "嘉怡",
+    "明轩",
+    "诗涵",
+    "俊杰",
+    "欣怡",
+    "宇轩",
+    "婉清",
+    "博文",
+    "语嫣",
+    "天佑",
+    "若曦",
+    "立诚",
+    "雅琴",
+    "景行",
+    "沐阳",
+]
+
+_MATH_QIDS = [
+    "math_lim_001",
+    "math_lim_002",
+    "math_cont_001",
+    "math_inf_001",
+    "math_a1c01_0001",
+    "math_a1c01_0002",
+    "math_a1c02_0001",
+]
+_PHYS_QIDS = [
+    "physics_mech_0001",
+    "physics_mech_0002",
+    "physics_mech_0003",
+    "physics_mech_0004",
+    "physics_mech_0005",
+    "phy_fric_001",
+    "phy_new_001",
+]
+_ERROR_TAGS = [
+    "公式误用",
+    "遗漏假设",
+    "放缩方向",
+    "边界条件",
+    "概念不清",
+    "方向判断",
+    "中途离开",
+    None,
+    None,
+]
+
+
+def _cohort_name(index: int) -> str:
+    return _SURNAMES[index % len(_SURNAMES)] + _GIVEN[index % len(_GIVEN)]
+
+
+def _cleanup_non_roster_students(db) -> None:
+    """只保留 3 名重点 + 47 名班级同学 + admin；清掉旧的统计填充账号。"""
+    keep_ids = set(FOCUS_IDS) | {f"u_cohort_{i:02d}" for i in range(1, COHORT_COUNT + 1)} | {
+        "u_admin"
+    }
+    keep_names = FOCUS_USERNAMES | {f"s{i:02d}" for i in range(1, COHORT_COUNT + 1)} | {
+        "admin"
+    }
+    rows = list(db.scalars(select(User)).all())
+    for user in rows:
+        if user.role != "student":
+            continue
+        if user.id in keep_ids or (user.username and user.username in keep_names):
+            continue
+        db.execute(delete(Attempt).where(Attempt.user_id == user.id))
+        db.execute(delete(BlackboardEntry).where(BlackboardEntry.user_id == user.id))
+        db.execute(delete(Plan).where(Plan.user_id == user.id))
+        db.execute(delete(AiCallLog).where(AiCallLog.user_id == user.id))
+        db.delete(user)
+    # 显式清掉旧 stats_pad
+    pad = db.get(User, "u_stats_pad")
+    if pad is not None:
+        db.execute(delete(Attempt).where(Attempt.user_id == "u_stats_pad"))
+        db.delete(pad)
+
+
+def _seed_cohort_students(db) -> int:
+    """生成班级其余同学：有计划 / 作答 / 少量提醒，供管理端统计与班级对照。"""
     now = datetime.now(timezone.utc)
-    for day in range(7):
-        for j in range(2):
-            aid = f"att_stats_{day}_{j}"
-            if db.get(Attempt, aid) is not None:
-                continue
-            db.add(
-                Attempt(
-                    id=aid,
-                    user_id="u_stats_pad",
-                    question_id=f"stats_q_{day}_{j}",
-                    answer="pad",
-                    is_correct=bool((day + j) % 3),
-                    duration_ms=900,
-                    created_at=now - timedelta(days=day, hours=j + 1),
-                )
+    created = 0
+    for i in range(1, COHORT_COUNT + 1):
+        uid = f"u_cohort_{i:02d}"
+        username = f"s{i:02d}"
+        subject = "physics" if i % 3 == 0 else "math"
+        scenario = "final_review" if i % 2 == 0 else "catch_up"
+        qids = _PHYS_QIDS if subject == "physics" else _MATH_QIDS
+        display = _cohort_name(i - 1)
+
+        user = db.get(User, uid)
+        if user is None:
+            user = db.scalar(select(User).where(User.username == username))
+        if user is None:
+            user = User(id=uid)
+            db.add(user)
+            created += 1
+        user.id = uid
+        user.username = username
+        user.display_name = display
+        user.role = "student"
+        user.password_hash = hash_password(COHORT_PASSWORD)
+        user.demo_time_jump_days = 0
+
+        days_left = 5 + (i % 10)
+        budget = 30 + (i % 5) * 10
+        plan = {
+            "scenario": scenario,
+            "goal": (
+                "期末过线巩固"
+                if scenario == "final_review"
+                else "跟课补齐章节缺口"
+            ),
+            "daily_minutes_budget": budget,
+            "days_left": days_left,
+            "tasks": [
+                _task(
+                    1,
+                    "练习",
+                    "章节基础题",
+                    min(budget, 25 + (i % 4) * 5),
+                    "完成当日基础练习",
+                    "medium",
+                    "physics.mech.ch02" if subject == "physics" else "math.a1.ch02",
+                    subject,
+                    status="done" if i % 4 else "todo",
+                ),
+                _task(
+                    2,
+                    "回看",
+                    "错题整理",
+                    min(budget, 20),
+                    "整理 1–2 道错题",
+                    "low",
+                    "physics.mech.ch02" if subject == "physics" else "math.a1.ch02",
+                    subject,
+                ),
+            ],
+            "_demo": {
+                "plan_status": "ok",
+                "plan_message": "班级同学常规学习安排",
+                "cohort": True,
+                "setup": {
+                    "mode": scenario,
+                    "subject": subject,
+                    "dailyMinutes": budget,
+                    "examDate": "2026-11-22" if scenario == "final_review" else "2026-12-18",
+                    "chapter": (
+                        "大学物理 · 力学"
+                        if subject == "physics"
+                        else "高等数学 · 极限与连续"
+                    ),
+                },
+            },
+        }
+        _upsert_plan(db, uid, plan)
+
+        attempt_n = 3 + (i % 8)  # 3..10
+        rows = []
+        for k in range(attempt_n):
+            qid = qids[(i + k) % len(qids)]
+            tag = _ERROR_TAGS[(i + k) % len(_ERROR_TAGS)]
+            roll = (i * 3 + k * 7) % 10
+            if roll <= 5:
+                correct: bool | None = True
+                tag = None
+            elif roll <= 8:
+                correct = False
+            else:
+                correct = None
+            rows.append(
+                {
+                    "id": f"att_cohort_{i:02d}_{k:02d}",
+                    "user_id": uid,
+                    "question_id": qid,
+                    "answer": "cohort",
+                    "is_correct": correct,
+                    "error_tag": tag if correct is False else None,
+                    "duration_ms": 8000 + (i + k) * 700,
+                    "created_at": now
+                    - timedelta(days=(i + k) % 14, hours=(k * 3) % 20, minutes=i % 50),
+                }
             )
+        _replace_attempts(db, uid, rows)
+
+        # 约 1/3 同学有提醒，丰富管理端分布
+        if i % 3 == 1:
+            bb_type = ["conflict", "challenge", "intervention"][(i // 3) % 3]
+            summary = {
+                "conflict": f"{display} 的今日任务略超每日时间预算",
+                "challenge": f"{display} 近一次作答可能遗漏关键条件",
+                "intervention": f"{display} 连续两天练习偏少，建议短任务恢复",
+            }[bb_type]
+            _upsert_bb(
+                db,
+                f"bb_cohort_{i:02d}",
+                {
+                    "user_id": uid,
+                    "type": bb_type,
+                    "summary": summary,
+                    "severity": "medium" if bb_type != "conflict" else "high",
+                    "evidence_refs": json.dumps(
+                        [f"同学 · {display}", f"科目 · {subject}"],
+                        ensure_ascii=False,
+                    ),
+                    "status": "open" if i % 2 else "resolved",
+                    "resolution": (
+                        None
+                        if i % 2
+                        else json.dumps(
+                            {"action": "ack", "note": "已读"},
+                            ensure_ascii=False,
+                        )
+                    ),
+                },
+            )
+
+        if i % 11 == 0:
+            _ensure_ai_log(
+                db,
+                user_id=uid,
+                intent="create_plan",
+                request_id=f"seed_cohort_cp_{i:02d}",
+                status="ok",
+                response={"status": "ok"},
+            )
+        if i % 13 == 0:
+            _ensure_ai_log(
+                db,
+                user_id=uid,
+                intent="verify_answer",
+                request_id=f"seed_cohort_vf_{i:02d}",
+                status="ok",
+                response={"status": "ok"},
+            )
+    return created
 
 
 def seed_demo_accounts() -> dict:
     init_db()
     with SessionLocal() as db:
+        _cleanup_non_roster_students(db)
         for spec in ACCOUNTS:
             _upsert_user(db, spec)
         db.flush()
         _seed_math_conflict(db, "u_student_math")
         _seed_physics_ok(db, "u_student_physics")
         _seed_catchup_intervention(db, "u_student_catchup")
-        _seed_admin_distribution(db)
+        cohort_created = _seed_cohort_students(db)
         db.commit()
-    return {"accounts": [a["username"] for a in ACCOUNTS]}
+        student_total = len(
+            list(db.scalars(select(User).where(User.role == "student")).all())
+        )
+    return {
+        "focus": [a["username"] for a in ACCOUNTS if a["role"] == "student"],
+        "cohort_created": cohort_created,
+        "students_total": student_total,
+        "admin": "admin",
+    }
 
 
 def main() -> int:

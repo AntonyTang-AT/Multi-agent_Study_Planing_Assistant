@@ -34,6 +34,7 @@ export interface AdminStats {
     id: string;
     username: string | null;
     display_name: string | null;
+    is_focus?: boolean;
     attempts: number;
     passed: number;
     pass_rate: number;

@@ -401,7 +401,7 @@ export function AdminPage() {
       >
         <Table
           rowKey="id"
-          pagination={false}
+          pagination={{ pageSize: 10, showSizeChanger: false }}
           dataSource={students}
           columns={[
             {
@@ -409,6 +409,11 @@ export function AdminPage() {
               render: (_, row) => (
                 <div>
                   <strong>{row.display_name || row.username}</strong>
+                  {row.is_focus ? (
+                    <Tag color="green" style={{ marginLeft: 8 }}>
+                      重点
+                    </Tag>
+                  ) : null}
                   <div className="admin-table-sub">{row.username}</div>
                 </div>
               ),
