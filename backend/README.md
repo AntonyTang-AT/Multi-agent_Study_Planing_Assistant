@@ -8,14 +8,20 @@
 
 ## 当前进度
 
-已完成 Issue `#11 [后端][B1] FastAPI 骨架`：
+- **B1**：`GET /api/health`、`POST /api/session`、CORS、SQLite `User`
+- **B2**：从 `data/` 导入 taxonomy / materials / questions；`GET /api/materials`、`GET /api/questions`（数组响应，对齐前端）
 
-- `GET /api/health` → `{ "db": "up"|"down", "agent": "up"|"down" }`（探测 Agent `GET /health`）
-- `POST /api/session` → `{ "user_id": "..." }`（对齐前端 `createSession`）
-- CORS 放行 `http://localhost:5173` 与 `http://127.0.0.1:5173`
-- SQLite + `User` 表；OpenAPI `/docs`
+计划/作答/黑板、AI 网关属于 B3–B5。
 
-资料查询、计划/作答/黑板、AI 网关属于 B2–B5。
+### 导入资料
+
+```bash
+cd backend
+python -m scripts.seed_or_import          # 空库自动种子
+python -m scripts.seed_or_import --force  # 幂等全量 upsert
+```
+
+服务启动时若库为空也会自动 `seed_if_empty`。
 
 ## 启动
 
