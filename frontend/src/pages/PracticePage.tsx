@@ -1,4 +1,5 @@
 import {
+  BookOutlined,
   CheckCircleOutlined,
   ExperimentOutlined,
   FormOutlined,
@@ -9,6 +10,7 @@ import {
   Button,
   Card,
   Divider,
+  Input,
   Radio,
   Space,
   Tag,
@@ -16,28 +18,53 @@ import {
   message,
 } from "antd";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
 import { agentErrorMessage, invokeAgent } from "../api/ai";
-import { submitAttempt } from "../api/backend";
+import { fetchQuestions, submitAttempt } from "../api/backend";
 import { NextStepCard } from "../components/NextStepCard";
+import { chapterByLabelOrName } from "../data/chapters";
 import { getPersonaBundle } from "../data/personaContent";
 import type { DemoQuestion } from "../mocks/mockData";
 import { demoQuestion } from "../mocks/mockData";
+import type { Question } from "../types/api";
 import { useAuthStore } from "../stores/useAuthStore";
 import { useLearningStore } from "../stores/useLearningStore";
 
+type PracticeItem = DemoQuestion;
+
+function toPracticeItem(question: Question): PracticeItem {
+  const withOptions = question as Question & {
+    options?: DemoQuestion["options"];
+  };
+  return {
+    ...question,
+    options: withOptions.options ?? [],
+  };
+}
+
+function mergeBanks(
+  personaBank: PracticeItem[],
+  apiBank: PracticeItem[],
+  limit = 16,
+): PracticeItem[] {
+  const seen = new Set<string>();
+  const merged: PracticeItem[] = [];
+  for (const item of [...personaBank, ...apiBank]) {
+    if (!item?.question_id || seen.has(item.question_id)) continue;
+    seen.add(item.question_id);
+    merged.push(item);
+    if (merged.length >= limit) break;
+  }
+  return merged.length ? merged : [demoQuestion];
+}
+
 export function PracticePage() {
+  const [searchParams] = useSearchParams();
   const username = useAuthStore((state) => state.user?.username);
   const bundle = getPersonaBundle(username);
-  const bank = useMemo(
-    () => (bundle?.practice_bank?.length ? bundle.practice_bank : [demoQuestion]),
-    [bundle],
-  );
-  const [activeId, setActiveId] = useState(bank[0]?.question_id || demoQuestion.question_id);
-  const [answer, setAnswer] = useState("");
-  const startedAt = useRef(Date.now());
   const setup = useLearningStore((state) => state.setup);
+  const plan = useLearningStore((state) => state.plan);
   const demo = useLearningStore((state) => state.demo);
   const practice = useLearningStore((state) => state.practice);
   const loading = useLearningStore((state) => state.loading);
@@ -54,26 +81,89 @@ export function PracticePage() {
   const setLoading = useLearningStore((state) => state.setLoading);
   const setError = useLearningStore((state) => state.setError);
 
+  const [bank, setBank] = useState<PracticeItem[]>(
+    bundle?.practice_bank?.length ? bundle.practice_bank : [demoQuestion],
+  );
+  const [bankSource, setBankSource] = useState("人设题单");
+  const [activeId, setActiveId] = useState(
+    bank[0]?.question_id || demoQuestion.question_id,
+  );
+  const [answer, setAnswer] = useState("");
+  const startedAt = useRef(Date.now());
+
+  const preferredKnowledge = useMemo(() => {
+    const fromQuery = searchParams.get("knowledge");
+    if (fromQuery) return fromQuery;
+    const task = plan?.tasks?.find(
+      (item) => (item as { status?: string }).status !== "done",
+    );
+    return task?.knowledge_ids?.[0];
+  }, [plan, searchParams]);
+
   useEffect(() => {
-    setActiveId(bank[0]?.question_id || demoQuestion.question_id);
+    let cancelled = false;
+    const personaBank = bundle?.practice_bank?.length
+      ? bundle.practice_bank
+      : [];
+    const load = async () => {
+      try {
+        const preferHot = setup.mode === "final_review";
+        let apiItems = await fetchQuestions({
+          subject: setup.subject,
+          knowledgeId: preferredKnowledge,
+          scenarioTag: setup.mode,
+          examHot: preferHot ? true : undefined,
+        });
+        if (apiItems.length < 4) {
+          apiItems = await fetchQuestions({ subject: setup.subject });
+        }
+        if (cancelled) return;
+        const merged = mergeBanks(
+          personaBank,
+          apiItems.map(toPracticeItem),
+        );
+        setBank(merged);
+        setBankSource(
+          preferredKnowledge
+            ? `人设 + 题库（${preferredKnowledge}）`
+            : `人设 + 题库 · ${setup.subject === "math" ? "高等数学" : "大学物理"}`,
+        );
+        setActiveId(merged[0]?.question_id || demoQuestion.question_id);
+      } catch {
+        if (cancelled) return;
+        const fallback = personaBank.length ? personaBank : [demoQuestion];
+        setBank(fallback);
+        setBankSource("人设题单（题库暂不可用）");
+        setActiveId(fallback[0]?.question_id || demoQuestion.question_id);
+      }
+    };
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [bundle, preferredKnowledge, setup.mode, setup.subject, username]);
+
+  useEffect(() => {
     setAnswer("");
     resetPractice();
     startedAt.current = Date.now();
-  }, [username, bank, resetPractice]);
+  }, [activeId, resetPractice]);
 
-  const question: DemoQuestion =
+  const question: PracticeItem =
     bank.find((item) => item.question_id === activeId) || bank[0] || demoQuestion;
+  const hasOptions = Boolean(question.options?.length);
+  const materialsChapter =
+    chapterByLabelOrName(setup.subject, question.chapter)?.id ||
+    question.knowledge_ids?.[0] ||
+    "";
 
   const selectQuestion = (id: string) => {
     setActiveId(id);
-    setAnswer("");
-    resetPractice();
-    startedAt.current = Date.now();
   };
 
   const submit = async () => {
-    if (!answer) {
-      message.warning("请选择一个答案后再提交");
+    if (!answer.trim()) {
+      message.warning(hasOptions ? "请选择一个答案后再提交" : "请先写下你的答案");
       return;
     }
     setLoading(true);
@@ -104,7 +194,9 @@ export function PracticePage() {
       } catch (requestError) {
         const fallbackMessage = agentErrorMessage(requestError);
         setError(fallbackMessage);
-        passed = answer === question.answer;
+        passed =
+          answer.trim() === question.answer.trim() ||
+          answer.trim().includes(question.answer.trim());
         setLocalPracticeResult(
           passed,
           "核对服务暂不可用，已按题库标准答案完成本地判分。",
@@ -117,10 +209,11 @@ export function PracticePage() {
         answer,
         error_tag: question.error_tags[0],
         duration_ms: Date.now() - startedAt.current,
+        is_correct: passed,
       });
       addAttempt({
         ...attempt,
-        is_correct: passed,
+        is_correct: attempt.is_correct ?? passed,
       });
     } catch (requestError) {
       setError(agentErrorMessage(requestError));
@@ -141,6 +234,9 @@ export function PracticePage() {
   const abstained =
     practice.status === "abstain" || practice.status === "doubt";
   const auditTrail = practice.auditTrail ?? [];
+  const materialsPath = materialsChapter
+    ? `/materials?subject=${setup.subject}&chapter=${encodeURIComponent(materialsChapter)}`
+    : `/materials?subject=${setup.subject}`;
 
   return (
     <div className="page-stack">
@@ -153,11 +249,14 @@ export function PracticePage() {
               : "今天练几题"}
           </h1>
           <p className="page-intro__description">
-            当前题单共 {bank.length} 道，可按章节切换。提交后会留下对错记录。
+            当前题单共 {bank.length} 道（{bankSource}）。提交后会把对错写入学习轨迹。
           </p>
         </div>
         <div className="page-intro__actions">
           <Tag color="green">{bank.length} 题</Tag>
+          <Link to={materialsPath}>
+            <Button icon={<BookOutlined />}>对照资料</Button>
+          </Link>
           <Link to="/blackboard">
             <Button icon={<HistoryOutlined />}>查看相关提醒</Button>
           </Link>
@@ -193,6 +292,7 @@ export function PracticePage() {
                   <div>
                     <Tag>{item.exam_hot ? "热点" : "基础"}</Tag>
                     <Tag>难度 {item.difficulty}</Tag>
+                    <Tag>{item.type}</Tag>
                   </div>
                 </button>
               ))}
@@ -215,18 +315,28 @@ export function PracticePage() {
           <div className="question-card__body">
             <span className="eyebrow">题目</span>
             <h2>{question.stem}</h2>
-            <Radio.Group
-              className="answer-grid"
-              value={answer}
-              onChange={(event) => setAnswer(String(event.target.value))}
-            >
-              {question.options.map((option) => (
-                <Radio value={option.label} key={option.key}>
-                  <span className="answer-key">{option.key}</span>
-                  <span>{option.label}</span>
-                </Radio>
-              ))}
-            </Radio.Group>
+            {hasOptions ? (
+              <Radio.Group
+                className="answer-grid"
+                value={answer}
+                onChange={(event) => setAnswer(String(event.target.value))}
+              >
+                {question.options.map((option) => (
+                  <Radio value={option.label} key={option.key}>
+                    <span className="answer-key">{option.key}</span>
+                    <span>{option.label}</span>
+                  </Radio>
+                ))}
+              </Radio.Group>
+            ) : (
+              <Input.TextArea
+                className="practice-answer-input"
+                rows={4}
+                value={answer}
+                placeholder="在这里写下你的答案或关键步骤"
+                onChange={(event) => setAnswer(event.target.value)}
+              />
+            )}
 
             {question.assumptions.length ? (
               <div className="assumption-row">

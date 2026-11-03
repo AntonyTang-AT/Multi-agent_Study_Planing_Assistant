@@ -2,6 +2,7 @@ import {
   ArrowRightOutlined,
   CalendarOutlined,
   ExperimentOutlined,
+  FireOutlined,
   ReadOutlined,
 } from "@ant-design/icons";
 import {
@@ -11,12 +12,17 @@ import {
   Input,
   InputNumber,
   Segmented,
+  Select,
   Space,
+  Switch,
   Tag,
 } from "antd";
+import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { agentErrorMessage, invokeAgent } from "../api/ai";
+import { chaptersForSubject } from "../data/chapters";
+import { useAuthStore } from "../stores/useAuthStore";
 import {
   useLearningStore,
   type ScenarioSetup,
@@ -28,9 +34,10 @@ const modeOptions = [
 ];
 
 export function ScenarioWizard() {
-  const [form] = Form.useForm<ScenarioSetup>();
+  const [form] = Form.useForm<ScenarioSetup & { preferExamHot?: boolean }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const userId = useAuthStore((state) => state.user?.id);
   const setup = useLearningStore((state) => state.setup);
   const demo = useLearningStore((state) => state.demo);
   const setSetup = useLearningStore((state) => state.setSetup);
@@ -42,9 +49,39 @@ export function ScenarioWizard() {
   const loading = useLearningStore((state) => state.loading);
   const error = useLearningStore((state) => state.error);
   const mode = Form.useWatch("mode", form) ?? setup.mode;
+  const subject = Form.useWatch("subject", form) ?? setup.subject;
+  const chapters = chaptersForSubject(subject);
+  const preferExamHot = Form.useWatch("preferExamHot", form);
 
-  const submit = async (values: ScenarioSetup) => {
-    setSetup(values);
+  useEffect(() => {
+    const current = form.getFieldValue("chapter");
+    const stillValid = chapters.some(
+      (item) => item.label === current || item.name === current || item.id === current,
+    );
+    if (!stillValid) {
+      const preferred =
+        chapters.find((item) => item.examHot) || chapters[0];
+      form.setFieldValue("chapter", preferred?.label);
+    }
+  }, [chapters, form, subject]);
+
+  const submit = async (
+    values: ScenarioSetup & { preferExamHot?: boolean },
+  ) => {
+    const chapterMeta = chapters.find(
+      (item) =>
+        item.label === values.chapter ||
+        item.name === values.chapter ||
+        item.id === values.chapter,
+    );
+    const nextSetup: ScenarioSetup = {
+      mode: values.mode,
+      subject: values.subject,
+      dailyMinutes: values.dailyMinutes,
+      examDate: values.examDate,
+      chapter: chapterMeta?.label || values.chapter,
+    };
+    setSetup(nextSetup);
     setError(null);
     setLoading(true);
     try {
@@ -52,8 +89,13 @@ export function ScenarioWizard() {
         scenario: values.mode,
         input: {
           goal: values.mode === "final_review" ? "期末过线" : "跟课补齐",
-          scenarioConfig: values,
+          scenarioConfig: {
+            ...nextSetup,
+            chapterId: chapterMeta?.id,
+            preferExamHot: Boolean(values.preferExamHot),
+          },
           error_tag: "formula_misuse",
+          prefer_exam_hot: Boolean(values.preferExamHot),
         },
         demo: {
           ...demo,
@@ -61,15 +103,15 @@ export function ScenarioWizard() {
             values.dailyMinutes <= 45 || Boolean(demo.force_conflict),
         },
         user_profile: {
-          user_id: "u_web_demo",
+          user_id: userId || "u_web_demo",
           constraints: {
             hard: [
               `daily_minutes<=${values.dailyMinutes}`,
               values.mode === "final_review"
                 ? `exam_date=${values.examDate}`
-                : `chapter=${values.chapter}`,
+                : `chapter=${chapterMeta?.id || values.chapter}`,
             ],
-            soft: [],
+            soft: values.preferExamHot ? ["prefer_exam_hot=true"] : [],
           },
         },
       });
@@ -107,10 +149,10 @@ export function ScenarioWizard() {
         />
       ) : null}
 
-      <Form<ScenarioSetup>
+      <Form<ScenarioSetup & { preferExamHot?: boolean }>
         form={form}
         layout="vertical"
-        initialValues={setup}
+        initialValues={{ ...setup, preferExamHot: setup.mode === "final_review" }}
         requiredMark={false}
         onFinish={submit}
       >
@@ -149,21 +191,45 @@ export function ScenarioWizard() {
               aria-label="考试日期"
             />
           </Form.Item>
-        ) : (
-          <Form.Item
-            name="chapter"
-            label="当前章节"
-            rules={[{ required: true, message: "请输入当前章节" }]}
-          >
-            <Input prefix={<ReadOutlined />} />
-          </Form.Item>
-        )}
+        ) : null}
+
+        <Form.Item
+          name="chapter"
+          label={mode === "catch_up" ? "当前章节" : "重点章节"}
+          rules={[{ required: true, message: "请选择章节" }]}
+        >
+          <Select
+            showSearch
+            optionFilterProp="label"
+            suffixIcon={<ReadOutlined />}
+            options={chapters.map((item) => ({
+              value: item.label,
+              label: item.examHot ? `${item.label} · 热点` : item.label,
+            }))}
+          />
+        </Form.Item>
+
+        <Form.Item
+          name="preferExamHot"
+          label="优先期末热点题"
+          valuePropName="checked"
+        >
+          <Switch
+            checkedChildren={<FireOutlined />}
+            unCheckedChildren="普通"
+          />
+        </Form.Item>
+        {preferExamHot ? (
+          <p className="scenario-hot-hint">
+            生成计划与后续练习会优先对照真题热点章节。
+          </p>
+        ) : null}
 
         <div className="scenario-hints">
           <span>
             <ExperimentOutlined /> 每日时间偏紧时，系统会请你确认怎么取舍
           </span>
-          <span>生成后可在计划页继续调整</span>
+          <span>章节来自本校教材大纲 taxonomy</span>
         </div>
 
         <Space className="scenario-actions" direction="vertical" size={8}>
@@ -180,9 +246,17 @@ export function ScenarioWizard() {
           <Button
             block
             type="text"
-            onClick={() => navigate("/materials")}
+            onClick={() => {
+              const chapterMeta = chapters.find(
+                (item) => item.label === form.getFieldValue("chapter"),
+              );
+              const query = chapterMeta
+                ? `?subject=${subject}&chapter=${encodeURIComponent(chapterMeta.id)}`
+                : `?subject=${subject}`;
+              navigate(`/materials${query}`);
+            }}
           >
-            先浏览学习资料
+            先浏览对应章节资料
           </Button>
         </Space>
       </Form>

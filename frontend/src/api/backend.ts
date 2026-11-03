@@ -87,12 +87,34 @@ export async function fetchMaterials(
   );
 }
 
+export interface QuestionQuery {
+  subject?: Subject | "";
+  knowledgeId?: string;
+  scenarioTag?: string;
+  examHot?: boolean;
+}
+
 export async function fetchQuestions(
-  knowledgeId?: string,
+  query: QuestionQuery | string = {},
 ): Promise<Question[]> {
-  if (appEnv.useMock) return [demoQuestion];
+  const normalized: QuestionQuery =
+    typeof query === "string" ? { knowledgeId: query } : query;
+  if (appEnv.useMock) {
+    return [demoQuestion].filter((item) => {
+      if (normalized.subject && item.subject !== normalized.subject) return false;
+      if (normalized.examHot != null && item.exam_hot !== normalized.examHot) {
+        return false;
+      }
+      return true;
+    });
+  }
   const response = await apiClient.get<Question[]>("/api/questions", {
-    params: { knowledge_id: knowledgeId },
+    params: {
+      subject: normalized.subject || undefined,
+      knowledge_id: normalized.knowledgeId || undefined,
+      scenario_tag: normalized.scenarioTag || undefined,
+      exam_hot: normalized.examHot,
+    },
   });
   return response.data;
 }
@@ -124,7 +146,7 @@ export async function submitAttempt(
       question_id: attempt.question_id,
       user_id: "u_web_demo",
       answer: attempt.answer,
-      is_correct: null,
+      is_correct: attempt.is_correct ?? null,
       error_tag: attempt.error_tag ?? null,
       duration_ms: attempt.duration_ms ?? null,
       created_at: new Date().toISOString(),

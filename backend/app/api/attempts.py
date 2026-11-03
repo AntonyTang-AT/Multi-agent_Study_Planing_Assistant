@@ -46,6 +46,7 @@ def create_attempt(
         user_id=user.id,
         question_id=body.question_id.strip(),
         answer=body.answer,
+        is_correct=body.is_correct,
         error_tag=body.error_tag,
         duration_ms=body.duration_ms,
     )

@@ -4,10 +4,11 @@ import {
   SendOutlined,
   UserOutlined,
 } from "@ant-design/icons";
-import { Avatar, Button, Card, Input, Space, Tag } from "antd";
+import { Avatar, Button, Card, Input, Space, Tag, message } from "antd";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
+import { agentErrorMessage, invokeAgent } from "../api/ai";
 import { NextStepCard } from "../components/NextStepCard";
 import { getPersonaBundle } from "../data/personaContent";
 import { useAuthStore } from "../stores/useAuthStore";
@@ -43,7 +44,9 @@ export function ChatPage() {
   const persona = useLearningStore((state) => state.persona);
   const planStatus = useLearningStore((state) => state.planStatus);
   const attempts = useLearningStore((state) => state.attempts);
+  const demo = useLearningStore((state) => state.demo);
   const hydratedUserId = useLearningStore((state) => state.hydratedUserId);
+  const mergeBlackboard = useLearningStore((state) => state.mergeBlackboard);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [thinking, setThinking] = useState(false);
@@ -96,6 +99,73 @@ export function ChatPage() {
 
   const go = (path: string) =>
     navigate(demoMode ? `${path}?demo=1` : path);
+
+  const agentReply = async (
+    text: string,
+  ): Promise<{ text: string; options?: ChatOption[] } | null> => {
+    if (/质疑|假设|遗漏条件|定义域|单侧/.test(text)) {
+      const response = await invokeAgent("challenge", {
+        scenario: setup.mode,
+        input: {
+          question: {
+            question_id: "chat_challenge_live",
+            stem: text,
+            answer: "",
+            assumptions: [],
+            knowledge_ids: plan?.tasks?.[0]?.knowledge_ids || ["math.a1.ch02"],
+            error_tags: ["undefined_assumption"],
+          },
+        },
+        demo,
+      });
+      mergeBlackboard(response.blackboard_entries || []);
+      const card = response.output?.card;
+      return {
+        text:
+          (typeof card?.message === "string" && card.message) ||
+          (typeof card?.title === "string"
+            ? `已触发结构化质疑：${card.title}。${response.message}`
+            : response.message) ||
+          "已生成质疑卡片，请到提醒页确认假设是否齐全。",
+        options: [
+          { label: "查看质疑提醒", path: "/blackboard" },
+          { label: "去做一题验证", path: "/practice" },
+        ],
+      };
+    }
+    if (/元认知|复盘|错因|为什么总错|学习方法/.test(text)) {
+      const response = await invokeAgent("metacognitive_feedback", {
+        scenario: setup.mode,
+        input: {
+          topic: setup.chapter || persona?.focus || "极限与连续",
+          error_tag: persona?.weak_points?.[0] || "limit_misuse",
+        },
+        resource_refs: [
+          {
+            type: "knowledge",
+            id: "math.limit",
+            label: setup.chapter || "极限与连续",
+          },
+        ],
+        demo,
+      });
+      mergeBlackboard(response.blackboard_entries || []);
+      const card = response.output?.card;
+      return {
+        text:
+          (typeof card?.message === "string" && card.message) ||
+          (typeof card?.title === "string"
+            ? `元认知复盘：${card.title}。${response.message}`
+            : response.message) ||
+          "已生成复盘建议，可到提醒页查看。",
+        options: [
+          { label: "查看复盘提醒", path: "/blackboard" },
+          { label: "打开学习轨迹", path: "/trace" },
+        ],
+      };
+    }
+    return null;
+  };
 
   const reply = (text: string) => {
     const openConflict = blackboard.find(
@@ -193,26 +263,52 @@ export function ChatPage() {
     ]);
     setInput("");
     setThinking(true);
-    timer.current = window.setTimeout(() => {
-      const response = reply(text);
-      setMessages((current) => [
-        ...current,
-        {
-          id: `assistant_${Date.now()}`,
-          role: "assistant",
-          text: response.text,
-          time: nowTime(),
-          options: response.options,
-        },
-      ]);
-      setThinking(false);
-    }, 520);
+    void (async () => {
+      try {
+        const fromAgent = await agentReply(text);
+        const response = fromAgent || reply(text);
+        setMessages((current) => [
+          ...current,
+          {
+            id: `assistant_${Date.now()}`,
+            role: "assistant",
+            text: response.text,
+            time: nowTime(),
+            options: response.options,
+          },
+        ]);
+      } catch (error) {
+        const fallback = reply(text);
+        setMessages((current) => [
+          ...current,
+          {
+            id: `assistant_${Date.now()}`,
+            role: "assistant",
+            text: `${fallback.text}\n（智能服务暂不可用：${agentErrorMessage(error)}）`,
+            time: nowTime(),
+            options: fallback.options,
+          },
+        ]);
+        message.warning(agentErrorMessage(error));
+      } finally {
+        setThinking(false);
+      }
+    })();
   };
 
   const quickAsks =
     persona?.quick_asks?.length
-      ? persona.quick_asks
-      : ["今晚时间不够怎么办", "今天该练什么", "最近正确率怎么样", "我哪里容易错"];
+      ? [
+          ...persona.quick_asks.slice(0, 3),
+          "这题是不是漏了假设？",
+          "帮我做一次错因复盘",
+        ]
+      : [
+          "今晚时间不够怎么办",
+          "今天该练什么",
+          "这题是不是漏了假设？",
+          "帮我做一次错因复盘",
+        ];
 
   return (
     <div className="page-stack">

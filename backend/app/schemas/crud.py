@@ -66,6 +66,7 @@ class AttemptCreateBody(BaseModel):
     answer: str
     error_tag: str | None = None
     duration_ms: int | None = None
+    is_correct: bool | None = None
 
 
 def attempt_to_dict(row: Attempt) -> dict[str, Any]:
