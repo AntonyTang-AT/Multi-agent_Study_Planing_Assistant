@@ -23,13 +23,14 @@ from app.db.models import AiCallLog, Attempt, BlackboardEntry, Plan, User  # noq
 from app.db.session import SessionLocal, init_db  # noqa: E402
 from app.services.security import hash_password  # noqa: E402
 
-DEMO_PASSWORD = "Demo@2026"
-ADMIN_PASSWORD = "Admin@2026"
+# 演示口令刻意简短，方便答辩现场手输；同机也可用登录页芯片一键填入
+DEMO_PASSWORD = "demo"
+ADMIN_PASSWORD = "admin"
 
 ACCOUNTS = [
     {
         "id": "u_student_math",
-        "username": "student_math",
+        "username": "math",
         "display_name": "高数期末生",
         "role": "student",
         "password": DEMO_PASSWORD,
@@ -38,7 +39,7 @@ ACCOUNTS = [
     },
     {
         "id": "u_student_physics",
-        "username": "student_physics",
+        "username": "phys",
         "display_name": "大物跟课生",
         "role": "student",
         "password": DEMO_PASSWORD,
@@ -47,7 +48,7 @@ ACCOUNTS = [
     },
     {
         "id": "u_student_catchup",
-        "username": "student_catchup",
+        "username": "catch",
         "display_name": "进度落后生",
         "role": "student",
         "password": DEMO_PASSWORD,
@@ -78,7 +79,7 @@ def _upsert_user(db, spec: dict) -> User:
     user.display_name = spec["display_name"]
     user.role = spec["role"]
     user.password_hash = hash_password(spec["password"])
-    if spec["username"] == "student_catchup":
+    if spec["username"] == "catch":
         user.demo_time_jump_days = 3
     else:
         user.demo_time_jump_days = 0

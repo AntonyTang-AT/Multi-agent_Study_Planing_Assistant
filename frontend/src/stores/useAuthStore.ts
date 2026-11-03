@@ -29,29 +29,30 @@ export const useAuthStore = create<AuthState>()(
   ),
 );
 
+/** 短账号短密码，方便手输；也可点芯片一键填入 */
 export const DEMO_ACCOUNTS = [
   {
-    username: "student_math",
-    password: "Demo@2026",
-    label: "高数期末生",
-    hint: "冲突计划 + 黑板",
+    username: "math",
+    password: "demo",
+    label: "math / demo",
+    hint: "高数冲突计划",
   },
   {
-    username: "student_physics",
-    password: "Demo@2026",
-    label: "大物跟课生",
-    hint: "跟课计划 + 混合作答",
+    username: "phys",
+    password: "demo",
+    label: "phys / demo",
+    hint: "大物跟课",
   },
   {
-    username: "student_catchup",
-    password: "Demo@2026",
-    label: "进度落后生",
-    hint: "主动干预场景",
+    username: "catch",
+    password: "demo",
+    label: "catch / demo",
+    hint: "主动干预",
   },
   {
     username: "admin",
-    password: "Admin@2026",
-    label: "管理员",
-    hint: "全站统计看板",
+    password: "admin",
+    label: "admin / admin",
+    hint: "管理看板",
   },
 ] as const;
