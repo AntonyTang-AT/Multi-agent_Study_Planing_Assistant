@@ -9,9 +9,10 @@
 ## 当前进度
 
 - **B1**：`GET /api/health`、`POST /api/session`、CORS、SQLite `User`
-- **B2**：从 `data/` 导入 taxonomy / materials / questions；`GET /api/materials`、`GET /api/questions`（数组响应，对齐前端）
+- **B2**：从 `data/` 导入 taxonomy / materials / questions；`GET /api/materials`、`GET /api/questions`
+- **B3**：`plans` / `attempts` / `blackboard` CRUD（响应对齐前端；缺省 `X-User-Id` 回退 `u_web_demo`）
 
-计划/作答/黑板、AI 网关属于 B3–B5。
+AI 网关与落库属于 B4–B5。
 
 ### 导入资料
 
