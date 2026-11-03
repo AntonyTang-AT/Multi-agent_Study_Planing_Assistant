@@ -50,7 +50,7 @@ export function LoginPage() {
               name="username"
               rules={[{ required: true, message: "请输入用户名" }]}
             >
-              <Input size="large" placeholder="例如 student_math" autoComplete="username" />
+              <Input size="large" placeholder="math / phys / catch / admin" autoComplete="username" />
             </Form.Item>
             <Form.Item
               label="密码"
