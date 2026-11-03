@@ -139,3 +139,21 @@ class BlackboardEntry(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
+
+
+class AiCallLog(Base):
+    """AI 网关调用全量快照（请求/响应 JSON；可追溯）。"""
+
+    __tablename__ = "ai_call_logs"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    user_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
+    intent: Mapped[str] = mapped_column(String(64), index=True)
+    request_id: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)
+    task_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    status: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    request_body: Mapped[str] = mapped_column(Text, default="{}")
+    response_body: Mapped[str] = mapped_column(Text, default="{}")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )

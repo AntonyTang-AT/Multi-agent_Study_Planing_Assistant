@@ -11,6 +11,7 @@ from app.api import (
     ai_gateway,
     attempts,
     blackboard,
+    demo,
     health,
     materials,
     plans,
@@ -39,10 +40,10 @@ def create_app() -> FastAPI:
     settings = get_settings()
     app = FastAPI(
         title="知序学习助手 · Backend",
-        version="0.4.0-b4",
+        version="0.5.0-b5",
         description=(
-            "传统 Web API（B4）。"
-            "前端只请求本服务；AI 经网关透传 Agent，本服务不持有 LLM Key、不写智能分支。"
+            "传统 Web API（B5）。"
+            "前端只请求本服务；AI 经网关透传并落库；不持有 LLM Key、不写智能分支。"
         ),
         lifespan=lifespan,
     )
@@ -63,6 +64,7 @@ def create_app() -> FastAPI:
     app.include_router(attempts.router)
     app.include_router(blackboard.router)
     app.include_router(ai_gateway.router)
+    app.include_router(demo.router)
     return app
 
 
