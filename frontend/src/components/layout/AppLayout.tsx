@@ -111,6 +111,12 @@ export function AppLayout() {
   }, [location.pathname]);
 
   useEffect(() => {
+    if (user?.role === "admin") {
+      navigate("/admin", { replace: true });
+    }
+  }, [user?.role, navigate]);
+
+  useEffect(() => {
     void hydrateForUser(user?.id ?? null);
   }, [user?.id, hydrateForUser]);
 

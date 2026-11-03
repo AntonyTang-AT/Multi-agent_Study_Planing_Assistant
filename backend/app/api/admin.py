@@ -112,6 +112,58 @@ def admin_stats(
         else:
             subject_counter["other"] += 1
 
+    # 错因分布
+    error_counter: Counter[str] = Counter()
+    for (tag,) in db.execute(select(Attempt.error_tag)).all():
+        if tag:
+            error_counter[str(tag)] += 1
+
+    # 学生活跃度
+    student_rows = []
+    for u in db.scalars(
+        select(User).where(User.role == "student").order_by(User.created_at.desc())
+    ).all():
+        if u.id == "u_stats_pad":
+            continue
+        att_n = (
+            db.scalar(
+                select(func.count())
+                .select_from(Attempt)
+                .where(Attempt.user_id == u.id)
+            )
+            or 0
+        )
+        ok_n = (
+            db.scalar(
+                select(func.count())
+                .select_from(Attempt)
+                .where(Attempt.user_id == u.id, Attempt.is_correct.is_(True))
+            )
+            or 0
+        )
+        open_bb = (
+            db.scalar(
+                select(func.count())
+                .select_from(BlackboardEntry)
+                .where(
+                    BlackboardEntry.user_id == u.id,
+                    BlackboardEntry.status == "open",
+                )
+            )
+            or 0
+        )
+        student_rows.append(
+            {
+                "id": u.id,
+                "username": u.username,
+                "display_name": u.display_name,
+                "attempts": int(att_n),
+                "passed": int(ok_n),
+                "pass_rate": round((ok_n / att_n) * 100, 1) if att_n else 0.0,
+                "open_reminders": int(open_bb),
+            }
+        )
+
     users_preview = [
         {
             "id": u.id,
@@ -121,7 +173,14 @@ def admin_stats(
             "created_at": u.created_at.isoformat() if u.created_at else None,
         }
         for u in db.scalars(select(User).order_by(User.created_at.desc()).limit(20)).all()
+        if u.id != "u_stats_pad"
     ]
+
+    correct_n = int(attempt_correctness.get("true", 0))
+    wrong_n = int(attempt_correctness.get("false", 0))
+    pending_n = int(attempt_correctness.get("null", 0))
+    judged = correct_n + wrong_n
+    overall_pass_rate = round((correct_n / judged) * 100, 1) if judged else 0.0
 
     return {
         "users": {
@@ -135,7 +194,11 @@ def admin_stats(
             "total": int(attempt_total),
             "by_correctness": attempt_correctness,
             "by_subject": dict(subject_counter),
+            "by_error_tag": dict(error_counter.most_common(8)),
             "last_7_days": day_buckets,
+            "pass_rate": overall_pass_rate,
+            "judged": judged,
+            "pending": pending_n,
         },
         "blackboard": {
             "total": int(bb_total),
@@ -143,4 +206,5 @@ def admin_stats(
             "by_status": bb_status,
         },
         "ai_calls": {"total": int(ai_total), "by_intent": ai_intent},
+        "students": student_rows,
     }

@@ -15,23 +15,34 @@ import {
   Timeline,
   message,
 } from "antd";
-import { useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { agentErrorMessage, invokeAgent } from "../api/ai";
 import { submitAttempt } from "../api/backend";
 import { NextStepCard } from "../components/NextStepCard";
+import { getPersonaBundle } from "../data/personaContent";
+import type { DemoQuestion } from "../mocks/mockData";
+import { demoQuestion } from "../mocks/mockData";
+import { useAuthStore } from "../stores/useAuthStore";
 import { useLearningStore } from "../stores/useLearningStore";
 
 export function PracticePage() {
+  const username = useAuthStore((state) => state.user?.username);
+  const bundle = getPersonaBundle(username);
+  const bank = useMemo(
+    () => (bundle?.practice_bank?.length ? bundle.practice_bank : [demoQuestion]),
+    [bundle],
+  );
+  const [activeId, setActiveId] = useState(bank[0]?.question_id || demoQuestion.question_id);
   const [answer, setAnswer] = useState("");
   const startedAt = useRef(Date.now());
   const setup = useLearningStore((state) => state.setup);
   const demo = useLearningStore((state) => state.demo);
-  const question = useLearningStore((state) => state.question);
   const practice = useLearningStore((state) => state.practice);
   const loading = useLearningStore((state) => state.loading);
   const error = useLearningStore((state) => state.error);
+  const persona = useLearningStore((state) => state.persona);
   const applyPracticeResponse = useLearningStore(
     (state) => state.applyPracticeResponse,
   );
@@ -42,6 +53,23 @@ export function PracticePage() {
   const addAttempt = useLearningStore((state) => state.addAttempt);
   const setLoading = useLearningStore((state) => state.setLoading);
   const setError = useLearningStore((state) => state.setError);
+
+  useEffect(() => {
+    setActiveId(bank[0]?.question_id || demoQuestion.question_id);
+    setAnswer("");
+    resetPractice();
+    startedAt.current = Date.now();
+  }, [username, bank, resetPractice]);
+
+  const question: DemoQuestion =
+    bank.find((item) => item.question_id === activeId) || bank[0] || demoQuestion;
+
+  const selectQuestion = (id: string) => {
+    setActiveId(id);
+    setAnswer("");
+    resetPractice();
+    startedAt.current = Date.now();
+  };
 
   const submit = async () => {
     if (!answer) {
@@ -69,9 +97,9 @@ export function PracticePage() {
         applyPracticeResponse(response);
         passed = response.status === "ok";
         if (response.status === "ok") {
-          message.success("回答通过计算检验");
+          message.success("回答正确");
         } else {
-          message.warning("答案未通过校验，已切换为提示模式");
+          message.warning("这题还可以再看看，已保留作答记录");
         }
       } catch (requestError) {
         const fallbackMessage = agentErrorMessage(requestError);
@@ -79,9 +107,9 @@ export function PracticePage() {
         passed = answer === question.answer;
         setLocalPracticeResult(
           passed,
-          "智能服务暂不可用，已使用题库标准答案完成本地判分并保留作答记录。",
+          "核对服务暂不可用，已按题库标准答案完成本地判分。",
         );
-        message.warning("智能服务不可用，已切换为本地标准答案判分");
+        message.warning("已使用本地标准答案判分");
       }
 
       const attempt = await submitAttempt({
@@ -119,14 +147,17 @@ export function PracticePage() {
       <section className="page-intro">
         <div>
           <p className="eyebrow">练习中心</p>
-          <h1>今天练一题</h1>
+          <h1>
+            {persona?.real_name
+              ? `${persona.real_name}的题单`
+              : "今天练几题"}
+          </h1>
           <p className="page-intro__description">
-            提交后会核对结果。拿不准时可以先标记「稍后再看」，不会强行记成正确答案。
+            当前题单共 {bank.length} 道，可按章节切换。提交后会留下对错记录。
           </p>
         </div>
         <div className="page-intro__actions">
-          <Tag color="green">正确</Tag>
-          <Tag color="gold">稍后再看</Tag>
+          <Tag color="green">{bank.length} 题</Tag>
           <Link to="/blackboard">
             <Button icon={<HistoryOutlined />}>查看相关提醒</Button>
           </Link>
@@ -138,13 +169,37 @@ export function PracticePage() {
           type="error"
           showIcon
           closable
-          message="校验服务暂不可用"
+          message="核对服务暂不可用"
           description={error}
           onClose={() => setError(null)}
         />
       ) : null}
 
-      <section className="practice-layout">
+      <section className="practice-layout practice-layout--bank">
+        <aside className="practice-bank">
+          <Card title="本题单" size="small">
+            <div className="practice-bank__list">
+              {bank.map((item, index) => (
+                <button
+                  type="button"
+                  key={item.question_id}
+                  className={`practice-bank__item${item.question_id === question.question_id ? " is-active" : ""}`}
+                  onClick={() => selectQuestion(item.question_id)}
+                >
+                  <strong>
+                    {index + 1}. {item.chapter}
+                  </strong>
+                  <span>{item.stem}</span>
+                  <div>
+                    <Tag>{item.exam_hot ? "热点" : "基础"}</Tag>
+                    <Tag>难度 {item.difficulty}</Tag>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </Card>
+        </aside>
+
         <Card className="question-card">
           <div className="question-card__top">
             <Space wrap>
@@ -152,14 +207,14 @@ export function PracticePage() {
               <Tag>难度 {question.difficulty}</Tag>
               <Tag>{question.exam_hot ? "期末热点" : "基础训练"}</Tag>
             </Space>
-            <span>{question.question_id}</span>
+            <span>
+              {bank.findIndex((item) => item.question_id === question.question_id) + 1} /{" "}
+              {bank.length}
+            </span>
           </div>
           <div className="question-card__body">
             <span className="eyebrow">题目</span>
             <h2>{question.stem}</h2>
-            <div className="math-expression">
-              lim<sub>x→0</sub> (sin 3x − 3x) / x³
-            </div>
             <Radio.Group
               className="answer-grid"
               value={answer}
@@ -175,7 +230,7 @@ export function PracticePage() {
 
             {question.assumptions.length ? (
               <div className="assumption-row">
-                <span>假设声明</span>
+                <span>作答提示</span>
                 <Tag bordered={false}>{question.assumptions.join("；")}</Tag>
               </div>
             ) : null}
@@ -190,7 +245,23 @@ export function PracticePage() {
                 disabled={Boolean(practice.status !== "idle")}
                 onClick={submit}
               >
-                提交并校验
+                提交
+              </Button>
+              <Button
+                disabled={
+                  bank.findIndex((item) => item.question_id === question.question_id) >=
+                  bank.length - 1
+                }
+                onClick={() => {
+                  const idx = bank.findIndex(
+                    (item) => item.question_id === question.question_id,
+                  );
+                  if (idx < bank.length - 1) {
+                    selectQuestion(bank[idx + 1].question_id);
+                  }
+                }}
+              >
+                下一题
               </Button>
             </div>
           </div>
@@ -202,8 +273,8 @@ export function PracticePage() {
               type="success"
               showIcon
               icon={<CheckCircleOutlined />}
-              message="passed · 校验通过"
-              description="答案、耗时与提交动作已记录到学习轨迹。"
+              message="回答正确"
+              description="本次作答已记入学习轨迹。"
             />
           ) : null}
           {abstained ? (
@@ -212,7 +283,9 @@ export function PracticePage() {
               showIcon
               icon={<ExperimentOutlined />}
               message="这题先标记为「稍后再看」"
-              description={practice.message || "当前结果还不够确定，不会记成正确答案。"}
+              description={
+                practice.message || "当前结果还不够确定，不会记成正确答案。"
+              }
             />
           ) : null}
 
@@ -247,15 +320,12 @@ export function PracticePage() {
             <Divider />
             <div className="audit-contract">
               <span>本题注意</span>
-              <code>涉及等价替换时，先确认适用条件</code>
+              <code>
+                {question.error_tags[0]
+                  ? `易错点：${question.error_tags[0]}`
+                  : "先确认题干条件再下笔"}
+              </code>
             </div>
-          </Card>
-
-          <Card className="practice-hint-card">
-            <strong>为什么提交后还要核对？</strong>
-            <p>
-              草稿里常见「看起来像对」的变形。系统会再对照一遍结果；拿不准时宁可先标记稍后再看。
-            </p>
           </Card>
         </div>
       </section>
