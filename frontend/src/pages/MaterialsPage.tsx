@@ -25,6 +25,7 @@ import { NextStepCard } from "../components/NextStepCard";
 import type { Material, Subject } from "../types/api";
 
 type SubjectFilter = "all" | Subject;
+type KindFilter = "all" | Material["kind"];
 
 const materialKind: Record<string, string> = {
   textbook: "教材",
@@ -36,7 +37,7 @@ const materialKind: Record<string, string> = {
 
 export function MaterialsPage() {
   const [subject, setSubject] = useState<SubjectFilter>("all");
-  const [scenarioTag, setScenarioTag] = useState("all");
+  const [kind, setKind] = useState<KindFilter>("all");
   const [keyword, setKeyword] = useState("");
   const [materials, setMaterials] = useState<Material[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,7 +49,7 @@ export function MaterialsPage() {
     setError(null);
     const query: MaterialQuery = {
       subject: subject === "all" ? "" : subject,
-      scenarioTag: scenarioTag === "all" ? "" : scenarioTag,
+      kind: kind === "all" ? "" : kind,
       keyword,
     };
     fetchMaterials(query)
@@ -64,7 +65,7 @@ export function MaterialsPage() {
     return () => {
       active = false;
     };
-  }, [keyword, scenarioTag, subject]);
+  }, [keyword, kind, subject]);
 
   return (
     <div className="page-stack">
@@ -73,7 +74,7 @@ export function MaterialsPage() {
           <p className="eyebrow">学习资料</p>
           <h1>学习资料</h1>
           <p className="page-intro__description">
-            按学科、章节与场景标签浏览。只登记来源、页码和可信度，不转载教材正文。
+            按学科、资料类型与关键词浏览。只登记来源、页码和可信度，不转载教材正文。
           </p>
         </div>
         <Tag className="scope-tag" icon={<SafetyCertificateOutlined />}>
@@ -93,13 +94,13 @@ export function MaterialsPage() {
             ]}
           />
           <Segmented
-            value={scenarioTag}
-            onChange={(value) => setScenarioTag(String(value))}
+            value={kind}
+            onChange={(value) => setKind(value as KindFilter)}
             options={[
-              { label: "全部场景", value: "all" },
-              { label: "概念", value: "概念" },
-              { label: "例题", value: "例题" },
-              { label: "跟课", value: "跟课" },
+              { label: "全部类型", value: "all" },
+              { label: "教材", value: "textbook" },
+              { label: "课件", value: "courseware" },
+              { label: "习题", value: "homework" },
             ]}
           />
           <Input

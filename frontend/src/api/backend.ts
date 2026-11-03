@@ -21,28 +21,41 @@ export interface MaterialQuery {
   subject?: Subject | "";
   chapter?: string;
   scenarioTag?: string;
+  kind?: string;
   keyword?: string;
 }
 
+type MaterialLike = {
+  subject: Subject;
+  chapter_id: string;
+  title: string;
+  kind: string;
+  summary?: string;
+  tags?: string[];
+};
+
+const matchesMaterialQuery = (material: MaterialLike, query: MaterialQuery) => {
+  const subjectMatch = !query.subject || material.subject === query.subject;
+  const chapterMatch =
+    !query.chapter || material.chapter_id.includes(query.chapter);
+  const kindMatch = !query.kind || material.kind === query.kind;
+  const tagMatch =
+    !query.scenarioTag || (material.tags || []).includes(query.scenarioTag);
+  const haystack = [
+    material.title,
+    material.summary || "",
+    material.chapter_id,
+    (material.tags || []).join(" "),
+  ]
+    .join(" ")
+    .toLowerCase();
+  const keywordMatch =
+    !query.keyword || haystack.includes(query.keyword.toLowerCase());
+  return subjectMatch && chapterMatch && kindMatch && tagMatch && keywordMatch;
+};
+
 const filterMockMaterials = (query: MaterialQuery): MaterialCard[] =>
-  demoMaterials.filter((material) => {
-    const subjectMatch = !query.subject || material.subject === query.subject;
-    const chapterMatch =
-      !query.chapter || material.chapter_id.includes(query.chapter);
-    const tagMatch =
-      !query.scenarioTag || material.tags.includes(query.scenarioTag);
-    const haystack = [
-      material.title,
-      material.summary,
-      material.chapter_id,
-      material.tags.join(" "),
-    ]
-      .join(" ")
-      .toLowerCase();
-    const keywordMatch =
-      !query.keyword || haystack.includes(query.keyword.toLowerCase());
-    return subjectMatch && chapterMatch && tagMatch && keywordMatch;
-  });
+  demoMaterials.filter((material) => matchesMaterialQuery(material, query));
 
 export async function createSession(): Promise<SessionResponse> {
   if (appEnv.useMock) {
@@ -64,7 +77,14 @@ export async function fetchMaterials(
       scenario_tag: query.scenarioTag || undefined,
     },
   });
-  return response.data;
+  // 关键词 / 类型在前端二次过滤（后端当前无 keyword/kind 参数）
+  return response.data.filter((material) =>
+    matchesMaterialQuery(material, {
+      kind: query.kind,
+      keyword: query.keyword,
+      scenarioTag: query.scenarioTag,
+    }),
+  );
 }
 
 export async function fetchQuestions(
