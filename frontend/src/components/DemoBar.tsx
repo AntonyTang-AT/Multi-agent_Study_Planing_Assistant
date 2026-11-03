@@ -1,8 +1,10 @@
 import {
   ClockCircleOutlined,
   ExperimentOutlined,
+  QuestionCircleOutlined,
   ReloadOutlined,
   SafetyCertificateOutlined,
+  ThunderboltOutlined,
 } from "@ant-design/icons";
 import { Button, Tag, message } from "antd";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -29,6 +31,7 @@ export function DemoBar() {
   const applyIntervention = useLearningStore(
     (state) => state.applyIntervention,
   );
+  const mergeBlackboard = useLearningStore((state) => state.mergeBlackboard);
   const resetDemo = useLearningStore((state) => state.resetDemo);
 
   if (searchParams.get("demo") !== "1") return null;
@@ -111,13 +114,77 @@ export function DemoBar() {
     }
   };
 
+  const showChallenge = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await invokeAgent("challenge", {
+        scenario: setup.mode,
+        input: {
+          question: {
+            question_id: "demo_challenge_sqrt",
+            stem: "若未特别声明定义域，求 y=√x 在 x=0 处的导数。",
+            answer: "不存在（或 +∞，视定义）",
+            assumptions: [],
+            knowledge_ids: ["math.a1.ch04"],
+            error_tags: ["undefined_assumption"],
+          },
+        },
+        demo,
+      });
+      mergeBlackboard(response.blackboard_entries || []);
+      message.info(response.message || "已生成结构化质疑卡片");
+      navigate({ pathname: "/blackboard", search: "?demo=1" });
+    } catch (error) {
+      setError(agentErrorMessage(error));
+      message.error(agentErrorMessage(error));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const showMetacognitive = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await invokeAgent("metacognitive_feedback", {
+        scenario: setup.mode,
+        input: {
+          topic: setup.chapter || "极限与连续",
+          error_tag: "limit_misuse",
+        },
+        resource_refs: [
+          {
+            type: "knowledge",
+            id: "math.limit",
+            label: setup.chapter || "极限与连续",
+          },
+        ],
+        demo,
+      });
+      mergeBlackboard(response.blackboard_entries || []);
+      const card = response.output?.card;
+      message.success(
+        card?.title
+          ? `已生成元认知复盘：${card.title}`
+          : response.message || "元认知反馈已生成",
+      );
+      navigate({ pathname: "/blackboard", search: "?demo=1" });
+    } catch (error) {
+      setError(agentErrorMessage(error));
+      message.error(agentErrorMessage(error));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <aside className="demo-bar" aria-label="演示控制条">
       <div className="demo-bar__label">
         <Tag color="green" icon={<SafetyCertificateOutlined />}>
           DEMO
         </Tag>
-        <span>3 分钟必演路径</span>
+        <span>必演路径</span>
       </div>
       <div className="demo-bar__actions">
         <Button
@@ -144,6 +211,22 @@ export function DemoBar() {
           onClick={timeJump}
         >
           时间跳跃
+        </Button>
+        <Button
+          size="small"
+          icon={<QuestionCircleOutlined />}
+          disabled={loading}
+          onClick={showChallenge}
+        >
+          结构化质疑
+        </Button>
+        <Button
+          size="small"
+          icon={<ThunderboltOutlined />}
+          disabled={loading}
+          onClick={showMetacognitive}
+        >
+          元认知复盘
         </Button>
         <Button
           size="small"

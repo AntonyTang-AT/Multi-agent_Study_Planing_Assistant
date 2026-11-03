@@ -1,4 +1,5 @@
 import {
+  BookOutlined,
   CalendarOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
@@ -28,6 +29,7 @@ import {
 import { BlackboardPanel } from "../components/BlackboardPanel";
 import { NextStepCard } from "../components/NextStepCard";
 import { UserOptionsCard } from "../components/UserOptionsCard";
+import { chapterIdFromKnowledge } from "../data/chapters";
 import { useLearningStore } from "../stores/useLearningStore";
 import type { Plan, PlanTask } from "../types/api";
 
@@ -173,6 +175,17 @@ export function PlanPage() {
           <Tag color={conflictOpen ? "orange" : "green"}>
             {conflictOpen ? "今晚需调整" : "安排可行"}
           </Tag>
+          <Link
+            to={`/materials?subject=${setup.subject}${
+              plan.tasks[0]?.knowledge_ids?.[0]
+                ? `&chapter=${encodeURIComponent(
+                    chapterIdFromKnowledge(plan.tasks[0].knowledge_ids[0]),
+                  )}`
+                : ""
+            }`}
+          >
+            <Button icon={<BookOutlined />}>章节资料</Button>
+          </Link>
           <Link to="/blackboard">
             <Button icon={<ProjectOutlined />}>待办提醒</Button>
           </Link>
@@ -269,6 +282,26 @@ export function PlanPage() {
                         <span key={knowledgeId}>{knowledgeId}</span>
                       ))}
                     </div>
+                    {knowledgeIds[0] ? (
+                      <div className="plan-task-card__links">
+                        <Link
+                          to={`/materials?subject=${task.subject || setup.subject}&chapter=${encodeURIComponent(
+                            chapterIdFromKnowledge(knowledgeIds[0]),
+                          )}`}
+                        >
+                          <Button size="small" type="link">
+                            对照资料
+                          </Button>
+                        </Link>
+                        <Link
+                          to={`/practice?knowledge=${encodeURIComponent(knowledgeIds[0])}`}
+                        >
+                          <Button size="small" type="link">
+                            练相关题
+                          </Button>
+                        </Link>
+                      </div>
+                    ) : null}
                   </Card>
                   );
                 })}

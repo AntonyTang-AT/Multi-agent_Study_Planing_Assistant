@@ -1360,6 +1360,27 @@ p {
   font-size: 8px;
 }
 
+.plan-task-card__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.practice-answer-input {
+  margin: 12px 0 4px;
+}
+
+.scenario-hot-hint {
+  margin: -4px 0 12px;
+  color: #69736e;
+  font-size: 13px;
+}
+
+.material-card__actions {
+  margin-top: 8px;
+}
+
 .plan-task-card__meta span {
   color: var(--faint);
   font-family: Consolas, monospace;
@@ -2833,6 +2854,60 @@ p {
   opacity: 0.85;
 }
 
+.admin-focus-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.admin-focus-card {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  border-radius: 14px;
+  background: linear-gradient(160deg, #f7fbf8 0%, #fbfbf7 55%, #f3f7f4 100%);
+  border: 1px solid rgba(47, 134, 103, 0.16);
+  box-shadow: 0 10px 24px rgba(27, 39, 34, 0.04);
+}
+
+.admin-focus-card__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-focus-card__head strong {
+  margin-left: 6px;
+  font-size: 18px;
+}
+
+.admin-focus-card__head small,
+.admin-focus-card__scene {
+  color: #69736e;
+}
+
+.admin-focus-card__scene {
+  margin: 0;
+  font-weight: 600;
+  color: #2f8667;
+}
+
+.admin-focus-card p {
+  margin: 0;
+  color: #46514c;
+  line-height: 1.55;
+}
+
+.admin-focus-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  color: #69736e;
+  font-size: 12px;
+}
+
 .admin-kpi-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -2920,6 +2995,7 @@ p {
     grid-template-columns: 1fr;
   }
 
+  .admin-focus-grid,
   .admin-kpi-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -2936,6 +3012,7 @@ p {
     padding: 22px;
   }
 
+  .admin-focus-grid,
   .admin-kpi-grid {
     grid-template-columns: 1fr;
   }

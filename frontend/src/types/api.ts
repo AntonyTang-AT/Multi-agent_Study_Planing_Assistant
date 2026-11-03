@@ -231,6 +231,7 @@ export interface AttemptRequest {
   answer: string;
   error_tag?: string;
   duration_ms?: number;
+  is_correct?: boolean | null;
 }
 
 export interface Attempt {

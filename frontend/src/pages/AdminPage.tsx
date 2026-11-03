@@ -1,12 +1,26 @@
 import {
+  ArrowRightOutlined,
   ArrowUpOutlined,
   BookOutlined,
   CheckCircleOutlined,
   FormOutlined,
   TeamOutlined,
+  UserSwitchOutlined,
 } from "@ant-design/icons";
-import { Card, Col, Progress, Row, Spin, Table, Tag, Typography } from "antd";
+import {
+  Button,
+  Card,
+  Col,
+  Progress,
+  Row,
+  Spin,
+  Table,
+  Tag,
+  Typography,
+  message,
+} from "antd";
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Area,
   AreaChart,
@@ -24,6 +38,36 @@ import {
 } from "recharts";
 
 import { fetchAdminStats, type AdminStats } from "../api/admin";
+import { login } from "../api/auth";
+import { useAuthStore } from "../stores/useAuthStore";
+import { useLearningStore } from "../stores/useLearningStore";
+
+const FOCUS_STORIES = [
+  {
+    username: "math",
+    password: "demo",
+    name: "林清夏",
+    scene: "高数期末 · 时间冲突",
+    story:
+      "每晚只有 45 分钟，但连续性证明约需 60 分钟。适合演示计划审计冲突与用户裁决。",
+  },
+  {
+    username: "phys",
+    password: "demo",
+    name: "周予安",
+    scene: "大物跟课 · 题目质疑",
+    story:
+      "力学进度落后约一周，受力分析易丢条件。适合演示结构化质疑与跟课补漏计划。",
+  },
+  {
+    username: "catch",
+    password: "demo",
+    name: "陈可",
+    scene: "节奏恢复 · 主动干预",
+    story:
+      "已两天几乎没练，系统用时间跳跃触发干预。适合演示短任务重启与节奏提醒。",
+  },
+] as const;
 
 const GREEN = "#2f8667";
 const BLUE = "#47758e";
@@ -56,6 +100,7 @@ const intentLabel: Record<string, string> = {
   proactive_intervention: "节奏提醒",
   arbitrate: "计划调整",
   challenge: "题目质疑",
+  metacognitive_feedback: "元认知复盘",
 };
 
 const boardTypeLabel: Record<string, string> = {
@@ -77,8 +122,12 @@ function toPieData(
 }
 
 export function AdminPage() {
+  const navigate = useNavigate();
+  const setAuth = useAuthStore((state) => state.setAuth);
+  const hydrateForUser = useLearningStore((state) => state.hydrateForUser);
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [switching, setSwitching] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -95,6 +144,21 @@ export function AdminPage() {
       cancelled = true;
     };
   }, []);
+
+  const openAsStudent = async (username: string, password: string) => {
+    setSwitching(username);
+    try {
+      const res = await login(username, password);
+      setAuth(res.access_token, res.user);
+      await hydrateForUser(res.user.id);
+      message.success(`已切换为 ${res.user.display_name}`);
+      navigate("/", { replace: true });
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : "切换失败");
+    } finally {
+      setSwitching(null);
+    }
+  };
 
   const trend = useMemo(
     () =>
@@ -173,6 +237,39 @@ export function AdminPage() {
           <strong>{stats.attempts.pass_rate ?? 0}%</strong>
           <span>整体正确率</span>
         </div>
+      </section>
+
+      <section className="admin-focus-grid">
+        {FOCUS_STORIES.map((story) => {
+          const row = students.find((item) => item.username === story.username);
+          return (
+            <article className="admin-focus-card" key={story.username}>
+              <div className="admin-focus-card__head">
+                <div>
+                  <Tag color="green">重点</Tag>
+                  <strong>{story.name}</strong>
+                </div>
+                <small>{story.username} / demo</small>
+              </div>
+              <p className="admin-focus-card__scene">{story.scene}</p>
+              <p>{story.story}</p>
+              <div className="admin-focus-card__meta">
+                <span>作答 {row?.attempts ?? "—"}</span>
+                <span>正确率 {row ? `${row.pass_rate}%` : "—"}</span>
+                <span>待办 {row?.open_reminders ?? "—"}</span>
+              </div>
+              <Button
+                type="primary"
+                icon={<UserSwitchOutlined />}
+                loading={switching === story.username}
+                onClick={() => void openAsStudent(story.username, story.password)}
+              >
+                以该生身份查看
+                <ArrowRightOutlined />
+              </Button>
+            </article>
+          );
+        })}
       </section>
 
       <section className="admin-kpi-grid">
