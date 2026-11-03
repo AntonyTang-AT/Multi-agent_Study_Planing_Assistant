@@ -11,8 +11,18 @@
 - **B1**：`GET /api/health`、`POST /api/session`、CORS、SQLite `User`
 - **B2**：从 `data/` 导入 taxonomy / materials / questions；`GET /api/materials`、`GET /api/questions`
 - **B3**：`plans` / `attempts` / `blackboard` CRUD（响应对齐前端；缺省 `X-User-Id` 回退 `u_web_demo`）
+- **B4**：`POST /api/ai/{intent}` 透传 Agent；失败返回 `agent_unavailable`；health 含 `agent`
 
-AI 网关与落库属于 B4–B5。
+落库与 demo 种子属于 B5。
+
+### 调 AI 网关
+
+```bash
+# 先启动 Agent :8001
+curl -s -X POST http://127.0.0.1:8000/api/ai/echo \
+  -H "Content-Type: application/json" \
+  -d "{\"request_id\":\"r1\",\"task_id\":\"t1\",\"intent\":\"echo\",\"input\":{}}"
+```
 
 ### 导入资料
 
