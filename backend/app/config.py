@@ -16,13 +16,14 @@ class Settings(BaseSettings):
     )
 
     database_url: str = f"sqlite:///{(BACKEND_ROOT / 'app.db').as_posix()}"
-    # 与 agent README / docs/前后端联调接口说明.md 默认端口一致
     agent_base_url: str = "http://127.0.0.1:8001"
-    # 前端 VITE_API_BASE 常用 localhost；本地直开也可能是 127.0.0.1
     cors_origins: list[str] = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",
+        "http://1.14.46.251",
     ]
+    jwt_secret: str = "zhixu-dev-jwt-secret-change-me"
+    jwt_expire_days: int = 7
 
 
 @lru_cache

@@ -74,7 +74,7 @@ def attempt_to_dict(row: Attempt) -> dict[str, Any]:
         "question_id": row.question_id,
         "user_id": row.user_id,
         "answer": row.answer,
-        "is_correct": None,
+        "is_correct": row.is_correct,
         "error_tag": row.error_tag,
         "duration_ms": row.duration_ms,
         "created_at": row.created_at.isoformat() if row.created_at else "",

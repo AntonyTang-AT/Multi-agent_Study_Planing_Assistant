@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 import logging
-from typing import Annotated, Any
+from typing import Any
 
-from fastapi import APIRouter, Body, Depends, Header
+from fastapi import APIRouter, Body, Depends
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_or_create_demo_user
+from app.api.deps import require_user
 from app.db.models import User
 from app.db.session import get_db
 from app.errors import AppError
@@ -34,14 +34,6 @@ ALLOWED_INTENTS: frozenset[str] = frozenset(
 )
 
 
-def _resolve_user(db: Session, x_user_id: str | None) -> User:
-    if x_user_id and x_user_id.strip():
-        user = db.get(User, x_user_id.strip())
-        if user is not None:
-            return user
-    return get_or_create_demo_user(db)
-
-
 def _inject_demo_time_jump(payload: dict[str, Any], user: User) -> None:
     """将会话演示偏移注入 payload.demo.time_jump_days（不覆盖已显式正值）。"""
     jump = int(getattr(user, "demo_time_jump_days", 0) or 0)
@@ -64,7 +56,7 @@ def _inject_demo_time_jump(payload: dict[str, Any], user: User) -> None:
 def ai_invoke(
     intent: str,
     body: dict[str, Any] = Body(default={}),
-    x_user_id: Annotated[str | None, Header(alias="X-User-Id")] = None,
+    user: User = Depends(require_user),
     db: Session = Depends(get_db),
 ) -> Any:
     """透传 Agent；2xx 成功后写 AiCallLog / 黑板 / 计划草稿。禁止智能分支。"""
@@ -78,8 +70,6 @@ def ai_invoke(
 
     payload = dict(body) if isinstance(body, dict) else {}
     payload["intent"] = intent
-
-    user = _resolve_user(db, x_user_id)
     _inject_demo_time_jump(payload, user)
 
     try:

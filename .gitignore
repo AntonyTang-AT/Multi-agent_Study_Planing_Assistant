@@ -34,3 +34,6 @@ backend/data_local/
 *.bak
 .coverage
 htmlcov/
+
+.tmp-deploy/
+

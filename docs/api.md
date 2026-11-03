@@ -134,12 +134,21 @@ Content-Type: application/json
 - [`docs/agent-api.md`](./agent-api.md)  
 - [`agent/examples/`](../agent/examples/)
 
+## 认证（JWT）
+
+- `POST /api/auth/register` — 学生自助注册  
+- `POST /api/auth/login` — `{ "username", "password" }` → `{ access_token, token_type, user }`  
+- `GET /api/auth/me` — 需 `Authorization: Bearer <token>`  
+- `POST /api/auth/change-password` — `{ old_password, new_password }`  
+- `GET /api/admin/stats` — 仅 `role=admin`  
+
+预置演示账号见 [`docs/演示账号.md`](./演示账号.md)。业务接口优先 JWT；仍兼容过渡期 `X-User-Id`；缺省回退 `u_web_demo`。
+
 ## 演示（B5）
 
 `POST /api/demo/time-jump` — `{ "days": 2 }`
 
 - 只更新会话 `demo_time_jump_days`，**不调用 Agent、不改计划/黑板**  
-- 缺省 `X-User-Id` 时回退 `u_web_demo`  
 - 之后 `POST /api/ai/*` 若会话偏移 `> 0`，网关注入 `demo.time_jump_days`（不覆盖请求中已显式正值）
 
 答辩种子库：`python -m scripts.seed_or_import --export-demo` / `--restore-demo`（见 `backend/README.md`）。

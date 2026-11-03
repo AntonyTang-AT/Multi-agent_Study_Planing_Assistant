@@ -17,23 +17,33 @@ engine = create_engine(
 )
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
+_TABLE_COLUMN_DDL: dict[str, dict[str, str]] = {
+    "users": {
+        "demo_time_jump_days": "INTEGER NOT NULL DEFAULT 0",
+        "username": "VARCHAR(64)",
+        "password_hash": "VARCHAR(255)",
+        "display_name": "VARCHAR(128)",
+        "role": "VARCHAR(32) NOT NULL DEFAULT 'student'",
+    },
+    "attempts": {
+        "is_correct": "BOOLEAN",
+    },
+}
+
 
 def _sqlite_add_missing_columns() -> None:
     """轻量补列：旧 SQLite 上 create_all 不会 ALTER 已有表。"""
     if not _settings.database_url.startswith("sqlite"):
         return
     insp = inspect(engine)
-    if "users" not in insp.get_table_names():
-        return
-    cols = {c["name"] for c in insp.get_columns("users")}
-    if "demo_time_jump_days" not in cols:
-        with engine.begin() as conn:
-            conn.execute(
-                text(
-                    "ALTER TABLE users ADD COLUMN demo_time_jump_days INTEGER "
-                    "NOT NULL DEFAULT 0"
-                )
-            )
+    with engine.begin() as conn:
+        for table, columns in _TABLE_COLUMN_DDL.items():
+            if table not in insp.get_table_names():
+                continue
+            cols = {c["name"] for c in insp.get_columns(table)}
+            for name, ddl in columns.items():
+                if name not in cols:
+                    conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {name} {ddl}"))
 
 
 def init_db() -> None:

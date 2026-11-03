@@ -13,6 +13,7 @@
 - **B3**：`plans` / `attempts` / `blackboard` CRUD（响应对齐前端；缺省 `X-User-Id` 回退 `u_web_demo`）
 - **B4**：`POST /api/ai/{intent}` 透传 Agent；失败返回 `agent_unavailable`；health 含 `agent`
 - **B5**：AI 成功路径落库（`AiCallLog` / 黑板 / 计划草稿）、`POST /api/demo/time-jump`、种子库导出/恢复
+- **Auth**：JWT 登录/注册/改密；预置三学生+管理员；`GET /api/admin/stats`
 
 ## B5 已交付
 

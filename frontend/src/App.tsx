@@ -4,6 +4,7 @@ import { lazy, Suspense } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
 import { AppErrorBoundary } from "./components/AppErrorBoundary";
+import { RequireAuth } from "./components/RequireAuth";
 import { AppLayout } from "./components/layout/AppLayout";
 
 const HomePage = lazy(() =>
@@ -32,6 +33,22 @@ const BlackboardPage = lazy(() =>
   import("./pages/BlackboardPage").then((module) => ({
     default: module.BlackboardPage,
   })),
+);
+const LoginPage = lazy(() =>
+  import("./pages/LoginPage").then((module) => ({ default: module.LoginPage })),
+);
+const RegisterPage = lazy(() =>
+  import("./pages/RegisterPage").then((module) => ({
+    default: module.RegisterPage,
+  })),
+);
+const AccountPage = lazy(() =>
+  import("./pages/AccountPage").then((module) => ({
+    default: module.AccountPage,
+  })),
+);
+const AdminPage = lazy(() =>
+  import("./pages/AdminPage").then((module) => ({ default: module.AdminPage })),
 );
 
 function PageLoader() {
@@ -80,7 +97,15 @@ export default function App() {
         <AppErrorBoundary>
           <Suspense fallback={<PageLoader />}>
             <Routes>
-              <Route element={<AppLayout />}>
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route
+                element={
+                  <RequireAuth>
+                    <AppLayout />
+                  </RequireAuth>
+                }
+              >
                 <Route index element={<HomePage />} />
                 <Route path="chat" element={<ChatPage />} />
                 <Route path="plan" element={<PlanPage />} />
@@ -88,6 +113,15 @@ export default function App() {
                 <Route path="materials" element={<MaterialsPage />} />
                 <Route path="trace" element={<TracePage />} />
                 <Route path="blackboard" element={<BlackboardPage />} />
+                <Route path="account" element={<AccountPage />} />
+                <Route
+                  path="admin"
+                  element={
+                    <RequireAuth adminOnly>
+                      <AdminPage />
+                    </RequireAuth>
+                  }
+                />
                 <Route path="*" element={<Navigate replace to="/" />} />
               </Route>
             </Routes>
