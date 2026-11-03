@@ -105,19 +105,34 @@ Content-Type: application/json
 
 条目通常由 B5 AI 落库写入；无 AI 时列表可为空。
 
-## AI 网关（仅转发）
+## AI 网关（B4 · 仅转发）
 
-`POST /api/ai/{intent}`  
+`POST /api/ai/{intent}`
 
-Body 对齐 Agent 请求子集；响应为 Agent 响应，并已落库。  
+1. 校验 intent 白名单（见 [`agent-api.md`](./agent-api.md) §4，含 `echo`）  
+2. 将 body 中 `intent` 设为路径值后透传 → `POST {AGENT_BASE_URL}/agent/v1/invoke`  
+3. 成功：原样返回 Agent JSON（**B4 不落库**；落库见 B5）  
+4. 连接失败 / 超时：HTTP **503**  
+   `{ "code": "agent_unavailable", "message": "智能服务暂不可用" }`  
+5. 未知 intent：HTTP **400** `{ "code": "unknown_intent", ... }`  
+6. **禁止**在网关写智能分支（自动消冲突、改写答案等）
 
-**联调必读（3 号已冻结）：**
+环境变量：仅 `AGENT_BASE_URL`（默认 `http://127.0.0.1:8001`），**不放 LLM Key**。
 
-- [`docs/前后端联调接口说明.md`](./前后端联调接口说明.md) — 网关职责、错误码、落库字段  
-- [`docs/agent-api.md`](./agent-api.md) — intent / 响应合同  
-- [`agent/examples/`](../agent/examples/) — 可拷贝 JSON  
+```http
+POST /api/ai/create_plan
+Content-Type: application/json
 
-`intent` 白名单与字段以 `agent-api.md` 为准；网关禁止写智能分支。
+{ ... AgentRequest ... }
+```
+
+示例请求体可取 `agent/examples/*.json` 中的 `request` 对象。
+
+**联调必读：**
+
+- [`docs/前后端联调接口说明.md`](./前后端联调接口说明.md)  
+- [`docs/agent-api.md`](./agent-api.md)  
+- [`agent/examples/`](../agent/examples/)
 
 ## 演示
 
