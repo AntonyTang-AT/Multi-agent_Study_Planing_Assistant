@@ -2,11 +2,12 @@ import axios, { AxiosError } from "axios";
 import { message } from "antd";
 
 import { appEnv } from "../config/env";
+import { useAuthStore } from "../stores/useAuthStore";
 import type { ApiErrorResponse } from "../types/api";
 
 export const apiClient = axios.create({
   baseURL: appEnv.apiBase,
-  timeout: 12_000,
+  timeout: 30_000,
   headers: {
     "Content-Type": "application/json",
   },
@@ -14,12 +15,32 @@ export const apiClient = axios.create({
 
 apiClient.interceptors.request.use((config) => {
   config.headers.set("X-Request-Source", "zhixu-frontend");
+  const token = useAuthStore.getState().token;
+  if (token) {
+    config.headers.set("Authorization", `Bearer ${token}`);
+  }
   return config;
 });
 
 apiClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError<ApiErrorResponse>) => {
+    const status = error.response?.status;
+    if (status === 401) {
+      const hadToken = Boolean(useAuthStore.getState().token);
+      useAuthStore.getState().clearAuth();
+      if (
+        hadToken &&
+        typeof window !== "undefined" &&
+        !window.location.pathname.startsWith("/login")
+      ) {
+        const next = encodeURIComponent(
+          `${window.location.pathname}${window.location.search}`,
+        );
+        window.location.assign(`/login?next=${next}`);
+      }
+    }
+
     const payload = error.response?.data;
     const fallback =
       error.code === "ECONNABORTED"
@@ -27,7 +48,10 @@ apiClient.interceptors.response.use(
         : "服务暂时不可用，请稍后重试";
     const text = payload?.message || error.message || fallback;
 
-    message.error(text);
+    // login page handles its own errors; avoid double toast on 401 redirect
+    if (!(status === 401 && window.location.pathname.startsWith("/login"))) {
+      message.error(text);
+    }
     return Promise.reject(error);
   },
 );

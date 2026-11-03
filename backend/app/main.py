@@ -8,8 +8,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api import (
+    admin,
     ai_gateway,
     attempts,
+    auth,
     blackboard,
     demo,
     health,
@@ -33,6 +35,13 @@ async def lifespan(_app: FastAPI):
         stats = seed_if_empty(db)
         if stats:
             logger.info("startup seed: %s", stats)
+    try:
+        from scripts.seed_demo_accounts import seed_demo_accounts
+
+        demo_stats = seed_demo_accounts()
+        logger.info("demo accounts: %s", demo_stats)
+    except Exception:
+        logger.exception("demo account seed failed")
     yield
 
 
@@ -40,10 +49,10 @@ def create_app() -> FastAPI:
     settings = get_settings()
     app = FastAPI(
         title="知序学习助手 · Backend",
-        version="0.5.0-b5",
+        version="0.6.0-auth",
         description=(
-            "传统 Web API（B5）。"
-            "前端只请求本服务；AI 经网关透传并落库；不持有 LLM Key、不写智能分支。"
+            "传统 Web API（Auth + B5）。"
+            "前端只请求本服务；JWT 登录；AI 经网关透传并落库；不持有 LLM Key、不写智能分支。"
         ),
         lifespan=lifespan,
     )
@@ -58,6 +67,7 @@ def create_app() -> FastAPI:
     app.add_exception_handler(StarletteHTTPException, http_exception_handler)
     app.include_router(health.router)
     app.include_router(session.router)
+    app.include_router(auth.router)
     app.include_router(materials.router)
     app.include_router(questions.router)
     app.include_router(plans.router)
@@ -65,6 +75,7 @@ def create_app() -> FastAPI:
     app.include_router(blackboard.router)
     app.include_router(ai_gateway.router)
     app.include_router(demo.router)
+    app.include_router(admin.router)
     return app
 
 

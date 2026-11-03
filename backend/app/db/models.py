@@ -16,11 +16,17 @@ def _uuid() -> str:
 
 
 class User(Base):
-    """会话用户。"""
+    """登录用户（学生 / 管理员）；匿名演示用户可无 username。"""
 
     __tablename__ = "users"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    username: Mapped[str | None] = mapped_column(
+        String(64), unique=True, nullable=True, index=True
+    )
+    password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    display_name: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    role: Mapped[str] = mapped_column(String(32), default="student", index=True)
     demo_time_jump_days: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
@@ -113,6 +119,7 @@ class Attempt(Base):
     user_id: Mapped[str] = mapped_column(String(36), index=True)
     question_id: Mapped[str] = mapped_column(String(128), index=True)
     answer: Mapped[str] = mapped_column(Text)
+    is_correct: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     error_tag: Mapped[str | None] = mapped_column(String(128), nullable=True)
     duration_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(

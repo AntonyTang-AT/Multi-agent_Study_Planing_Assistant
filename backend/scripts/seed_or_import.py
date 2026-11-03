@@ -104,6 +104,9 @@ def main() -> int:
                 stats = seed_if_empty(db, args.data_root)
                 if stats:
                     print("seeded:", stats)
+        from scripts.seed_demo_accounts import seed_demo_accounts
+
+        print("demo accounts:", seed_demo_accounts())
         export_demo_db(demo_path)
         return 0
 
@@ -121,6 +124,10 @@ def main() -> int:
                 print("skipped: db already has content (use --force to re-import)")
             else:
                 print("seeded:", stats)
+
+    from scripts.seed_demo_accounts import seed_demo_accounts
+
+    print("demo accounts:", seed_demo_accounts())
     return 0
 
 

@@ -6,12 +6,15 @@ import {
   FormOutlined,
   HomeOutlined,
   LineChartOutlined,
+  LogoutOutlined,
   MenuOutlined,
   MessageOutlined,
   PlayCircleOutlined,
   ProjectOutlined,
+  QuestionCircleOutlined,
+  UserOutlined,
 } from "@ant-design/icons";
-import { Button, Drawer, Tag, Tooltip } from "antd";
+import { Button, Drawer, Dropdown, Tag, Tooltip, message } from "antd";
 import { useEffect, useState } from "react";
 import {
   NavLink,
@@ -22,8 +25,9 @@ import {
 } from "react-router-dom";
 
 import { isMockMode } from "../../api/client";
-import { createSession } from "../../api/backend";
+import { useAuthStore } from "../../stores/useAuthStore";
 import { DemoBar } from "../DemoBar";
+import { DemoGuide } from "../DemoGuide";
 import { LearningJourney } from "../LearningJourney";
 
 const navigation = [
@@ -90,21 +94,29 @@ function Navigation({
 
 export function AppLayout() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const demoMode = searchParams.get("demo") === "1";
+  const user = useAuthStore((s) => s.user);
+  const clearAuth = useAuthStore((s) => s.clearAuth);
 
   useEffect(() => {
     setMobileNavOpen(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [location.pathname]);
 
-  useEffect(() => {
-    void createSession().catch(() => {
-      // The interceptor already surfaced the service error.
-    });
-  }, []);
+  const enableDemo = () => {
+    if (!user) {
+      message.info("请先登录演示账号，再打开演示模式");
+      navigate("/login?next=" + encodeURIComponent("/?demo=1"));
+      return;
+    }
+    const next = new URLSearchParams(searchParams);
+    next.set("demo", "1");
+    navigate({ pathname: location.pathname || "/", search: `?${next.toString()}` });
+  };
 
   return (
     <div className="app-shell">
@@ -122,20 +134,64 @@ export function AppLayout() {
             </Tag>
           </Tooltip>
           <Tag className="phase-tag">MVP · 全链路</Tag>
+          <Tooltip title="项目演示说明">
+            <Button
+              type="text"
+              icon={<QuestionCircleOutlined />}
+              aria-label="项目说明"
+              onClick={() => setGuideOpen(true)}
+            />
+          </Tooltip>
           <Tooltip title="打开 3 分钟演示控制条">
             <Button
               className="demo-mode-button"
-              type={searchParams.get("demo") === "1" ? "primary" : "default"}
+              type={demoMode ? "primary" : "default"}
               icon={<PlayCircleOutlined />}
-              onClick={() => {
-                const next = new URLSearchParams(searchParams);
-                next.set("demo", "1");
-                navigate({ pathname: "/", search: `?${next.toString()}` });
-              }}
+              onClick={enableDemo}
             >
               <span className="demo-mode-label">演示</span>
             </Button>
           </Tooltip>
+          {user ? (
+            <Dropdown
+              menu={{
+                items: [
+                  {
+                    key: "account",
+                    icon: <UserOutlined />,
+                    label: "账号设置",
+                    onClick: () => navigate("/account"),
+                  },
+                  ...(user.role === "admin"
+                    ? [
+                        {
+                          key: "admin",
+                          label: "管理看板",
+                          onClick: () => navigate("/admin"),
+                        },
+                      ]
+                    : []),
+                  {
+                    key: "logout",
+                    icon: <LogoutOutlined />,
+                    label: "退出登录",
+                    onClick: () => {
+                      clearAuth();
+                      navigate("/login", { replace: true });
+                    },
+                  },
+                ],
+              }}
+            >
+              <Button className="auth-user-button" icon={<UserOutlined />}>
+                {user.display_name}
+              </Button>
+            </Dropdown>
+          ) : (
+            <Button type="primary" onClick={() => navigate("/login")}>
+              登录
+            </Button>
+          )}
           <Button
             className="mobile-menu-button"
             type="text"
@@ -159,6 +215,7 @@ export function AppLayout() {
         </span>
       </footer>
       <DemoBar />
+      <DemoGuide open={guideOpen} onClose={() => setGuideOpen(false)} />
 
       <Drawer
         className="mobile-drawer"
@@ -171,7 +228,9 @@ export function AppLayout() {
         <Navigation mobile demo={demoMode} />
         <div className="mobile-drawer__note">
           <strong>完整学习闭环</strong>
-          <p>场景、计划、练习、轨迹与黑板共享同一份状态；智能不可用时仍保留传统学习路径。</p>
+          <p>
+            场景、计划、练习、轨迹与黑板共享同一份状态；智能不可用时仍保留传统学习路径。
+          </p>
         </div>
       </Drawer>
     </div>
