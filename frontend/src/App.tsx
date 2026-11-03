@@ -5,6 +5,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
 import { AppErrorBoundary } from "./components/AppErrorBoundary";
 import { RequireAuth } from "./components/RequireAuth";
+import { AdminLayout } from "./components/layout/AdminLayout";
 import { AppLayout } from "./components/layout/AppLayout";
 
 const HomePage = lazy(() =>
@@ -101,6 +102,15 @@ export default function App() {
               <Route path="/register" element={<RegisterPage />} />
               <Route
                 element={
+                  <RequireAuth adminOnly>
+                    <AdminLayout />
+                  </RequireAuth>
+                }
+              >
+                <Route path="admin" element={<AdminPage />} />
+              </Route>
+              <Route
+                element={
                   <RequireAuth>
                     <AppLayout />
                   </RequireAuth>
@@ -114,14 +124,6 @@ export default function App() {
                 <Route path="trace" element={<TracePage />} />
                 <Route path="blackboard" element={<BlackboardPage />} />
                 <Route path="account" element={<AccountPage />} />
-                <Route
-                  path="admin"
-                  element={
-                    <RequireAuth adminOnly>
-                      <AdminPage />
-                    </RequireAuth>
-                  }
-                />
                 <Route path="*" element={<Navigate replace to="/" />} />
               </Route>
             </Routes>

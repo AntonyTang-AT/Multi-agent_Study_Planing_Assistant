@@ -18,7 +18,11 @@ export interface AdminStats {
     total: number;
     by_correctness: Record<string, number>;
     by_subject: Record<string, number>;
+    by_error_tag?: Record<string, number>;
     last_7_days: Array<{ date: string; attempts: number }>;
+    pass_rate?: number;
+    judged?: number;
+    pending?: number;
   };
   blackboard: {
     total: number;
@@ -26,6 +30,15 @@ export interface AdminStats {
     by_status: Record<string, number>;
   };
   ai_calls: { total: number; by_intent: Record<string, number> };
+  students?: Array<{
+    id: string;
+    username: string | null;
+    display_name: string | null;
+    attempts: number;
+    passed: number;
+    pass_rate: number;
+    open_reminders: number;
+  }>;
 }
 
 export async function fetchAdminStats(): Promise<AdminStats> {
