@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app.api import health, materials, questions, session
+from app.api import attempts, blackboard, health, materials, plans, questions, session
 from app.config import get_settings
 from app.db.session import SessionLocal, init_db
 from app.errors import AppError, app_error_handler, http_exception_handler
@@ -30,9 +30,9 @@ def create_app() -> FastAPI:
     settings = get_settings()
     app = FastAPI(
         title="知序学习助手 · Backend",
-        version="0.2.0-b2",
+        version="0.3.0-b3",
         description=(
-            "传统 Web API（B2）。"
+            "传统 Web API（B3）。"
             "前端只请求本服务；Agent 仅经后续网关转发，本服务不持有 LLM Key。"
         ),
         lifespan=lifespan,
@@ -50,6 +50,9 @@ def create_app() -> FastAPI:
     app.include_router(session.router)
     app.include_router(materials.router)
     app.include_router(questions.router)
+    app.include_router(plans.router)
+    app.include_router(attempts.router)
+    app.include_router(blackboard.router)
     return app
 
 

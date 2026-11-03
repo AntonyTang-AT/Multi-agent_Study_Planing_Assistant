@@ -57,19 +57,53 @@ python -m scripts.seed_or_import          # 空库才导入
 python -m scripts.seed_or_import --force  # 幂等 upsert 全量
 ```
 
-## 计划
+## 计划 / 作答 / 黑板（B3）
 
-- `GET /api/plans/current`
-- `PUT /api/plans/current` — 保存用户确认后的计划快照
+鉴权：优先请求头 `X-User-Id`（`POST /api/session` 返回值）。  
+若缺省，服务回退演示用户 `u_web_demo`（兼容当前前端尚未统一写头）。
 
-## 作答
+### 计划
 
-`POST /api/attempts` — body 含 `question_id`, `answer`, `error_tag?`, `duration_ms?`
+- `GET /api/plans/current` → `Plan | null`（无计划返回 `null`，HTTP 200）
+- `PUT /api/plans/current` — body 为 Plan 快照（或 `{ "plan": {...} }`）→ 返回保存后的 Plan
 
-## 黑板
+```http
+PUT /api/plans/current
+Content-Type: application/json
 
-- `GET /api/blackboard`
-- `POST /api/blackboard/{id}/resolve` — `{ "action": "...", "note"?: "..." }`
+{
+  "scenario": "final_review",
+  "goal": "期末过线",
+  "daily_minutes_budget": 45,
+  "days_left": 14,
+  "tasks": []
+}
+```
+
+快照以 JSON 存 SQLite；结构对齐前端 `Plan` / Agent `output.plan`。
+
+### 作答
+
+`POST /api/attempts` → Attempt
+
+```json
+{
+  "question_id": "math_a1c02_0001",
+  "answer": "-9/2",
+  "error_tag": "formula_misuse",
+  "duration_ms": 12000
+}
+```
+
+响应含 `attempt_id`, `user_id`, `question_id`, `answer`, `is_correct`（B3 为 `null`）, `error_tag`, `duration_ms`, `created_at`。
+
+### 黑板
+
+- `GET /api/blackboard` → `BlackboardEntry[]`
+- `POST /api/blackboard/{entry_id}/resolve` — `{ "action": "...", "note"?: "..." }`  
+  仅更新 `status=resolved` 与 `resolution`，**不做智能消冲突**。
+
+条目通常由 B5 AI 落库写入；无 AI 时列表可为空。
 
 ## AI 网关（仅转发）
 
