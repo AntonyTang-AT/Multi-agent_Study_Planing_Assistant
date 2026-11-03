@@ -92,14 +92,35 @@ export function chapterByLabelOrName(
   );
 }
 
+/** Agent 粗粒度 ID → 资料包章级 ID（与 data/taxonomy/aliases.json 对齐） */
+const AGENT_CHAPTER_FALLBACK: Record<string, string> = {
+  "math.limit": "math.a1.ch02",
+  "math.derivative": "math.a1.ch04",
+  "math.mvt": "math.a1.ch05",
+  "math.integral": "math.a1.ch06",
+  "math.ode": "math.a1.ch08",
+  "phy.mech": "phy.dynamics",
+  "phy.wave": "phy.wave",
+  "phy.optics": "phy.interference",
+  "phy.thermo": "phy.thermo",
+};
+
 /** 从知识点 ID 归一到章级 ID（math.a1.ch02 / phy.dynamics） */
 export function chapterIdFromKnowledge(knowledgeId: string): string {
   if (!knowledgeId) return "";
+  if (AGENT_CHAPTER_FALLBACK[knowledgeId]) {
+    return AGENT_CHAPTER_FALLBACK[knowledgeId];
+  }
   const parts = knowledgeId.split(".");
-  if (knowledgeId.startsWith("math.")) {
+  // 已是细章：math.a1.ch02 / math.a1.ch02.kp01
+  if (knowledgeId.startsWith("math.a1.ch") && parts.length >= 3) {
     return parts.slice(0, 3).join(".");
   }
-  if (knowledgeId.startsWith("phy.") || knowledgeId.startsWith("physics.")) {
+  // 物理细章：phy.dynamics / phy.dynamics.kp01
+  if (knowledgeId.startsWith("phy.") && parts.length >= 2) {
+    return parts.slice(0, 2).join(".");
+  }
+  if (knowledgeId.startsWith("physics.") && parts.length >= 2) {
     return parts.slice(0, 2).join(".");
   }
   return knowledgeId;

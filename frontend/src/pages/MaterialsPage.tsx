@@ -133,12 +133,16 @@ export function MaterialsPage() {
         </Tag>
       </section>
 
-      {chapterMeta ? (
+      {chapter ? (
         <Alert
           type="info"
           showIcon
-          message={`正在查看：${chapterMeta.label}`}
-          description="来自计划或练习的深链定位。可清空章节筛选以浏览全部资料。"
+          message={`正在查看：${chapterMeta?.label || chapter}`}
+          description={
+            chapterMeta
+              ? "来自计划或练习的深链定位。可清空章节筛选以浏览全部资料。"
+              : "已按章节关键词筛选；若结果为空，可清除筛选后重试。"
+          }
           action={
             <Button
               size="small"
