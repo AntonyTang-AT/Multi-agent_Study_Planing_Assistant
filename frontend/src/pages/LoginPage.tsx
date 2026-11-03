@@ -40,7 +40,7 @@ export function LoginPage() {
         </div>
         <Typography.Title level={2}>登录学习工作台</Typography.Title>
         <Typography.Paragraph type="secondary">
-          半正式账号体系：学生数据按用户隔离；管理员可查看全站统计。也可使用下方演示账号一键填入。
+          每位同学的计划与作答互相隔离。可使用下方样例账号快速体验不同学习场景。
         </Typography.Paragraph>
 
         <Card className="auth-card" bordered={false}>
@@ -69,7 +69,7 @@ export function LoginPage() {
           </Form>
 
           <div className="auth-demo-chips">
-            <Typography.Text type="secondary">演示账号快捷填入</Typography.Text>
+            <Typography.Text type="secondary">样例账号（点击填入）</Typography.Text>
             <Space wrap size={[8, 8]}>
               {DEMO_ACCOUNTS.map((account) => (
                 <Tag

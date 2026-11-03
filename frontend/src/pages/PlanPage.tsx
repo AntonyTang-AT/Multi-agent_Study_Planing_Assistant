@@ -107,18 +107,17 @@ export function PlanPage() {
       <div className="page-stack">
         <section className="page-intro">
           <div>
-            <p className="eyebrow">Plan · 审计与冲突协商</p>
-            <h1>学习计划</h1>
+            <p className="eyebrow">学习计划</p>
+            <h1>还没有学习计划</h1>
             <p className="page-intro__description">
-              先在首页设定考试日期或当前章节、每日时长与学科，再生成计划。
+              先在首页设定期限、每日可用时间和学科，再生成适合你的安排。
             </p>
           </div>
-          <Tag className="scope-tag">GET /api/plans/current</Tag>
         </section>
         <section className="placeholder-panel">
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description="当前没有已保存计划"
+            description="当前账号还没有计划"
           />
           <Button type="primary" onClick={() => navigate("/")}>
             去设定学习场景
@@ -151,7 +150,7 @@ export function PlanPage() {
       if (response.output.plan) {
         await saveCurrentPlan(response.output.plan);
       }
-      message.success("裁决已提交，二次审计通过");
+      message.success("已按你的选择更新今晚安排");
     } catch (requestError) {
       setError(agentErrorMessage(requestError));
       message.error(agentErrorMessage(requestError));
@@ -164,18 +163,18 @@ export function PlanPage() {
     <div className="page-stack">
       <section className="page-intro">
         <div>
-          <p className="eyebrow">Plan · 审计与冲突协商</p>
-          <h1>学习计划</h1>
+          <p className="eyebrow">学习计划</p>
+          <h1>{plan.goal || "我的学习安排"}</h1>
           <p className="page-intro__description">
-            {planMessage || "任务来自 Agent 输出，保存前经过规则审计与用户确认。"}
+            {planMessage || "按天拆好的任务列表。时间不够用时，会请你选择怎么改。"}
           </p>
         </div>
         <div className="page-intro__actions">
           <Tag color={conflictOpen ? "orange" : "green"}>
-            {conflictOpen ? "等待裁决" : "已通过审计"}
+            {conflictOpen ? "今晚需调整" : "安排可行"}
           </Tag>
           <Link to="/blackboard">
-            <Button icon={<ProjectOutlined />}>打开黑板</Button>
+            <Button icon={<ProjectOutlined />}>待办提醒</Button>
           </Link>
         </div>
       </section>
@@ -280,35 +279,35 @@ export function PlanPage() {
         <aside className="plan-side">
           <Card
             className="plan-status-card"
-            title="协作状态"
+            title="安排进度"
             extra={<CheckCircleOutlined />}
           >
             <div className="agent-state-row is-done">
               <span>1</span>
               <div>
-                <strong>计划 Agent</strong>
-                <small>已生成 Plan v1</small>
+                <strong>生成每日任务</strong>
+                <small>已按目标与可用时间排出</small>
               </div>
             </div>
             <div className="agent-state-row is-done">
               <span>2</span>
               <div>
-                <strong>规则审计</strong>
-                <small>{conflictOpen ? "发现硬约束冲突" : "预算与依赖通过"}</small>
+                <strong>检查是否超时</strong>
+                <small>{conflictOpen ? "发现今晚时间不够" : "每日时间足够"}</small>
               </div>
             </div>
             <div className={`agent-state-row ${conflictOpen ? "is-active" : "is-done"}`}>
               <span>3</span>
               <div>
-                <strong>用户裁决</strong>
-                <small>{conflictOpen ? "等待你的选择" : "用户已确认"}</small>
+                <strong>由你确认调整</strong>
+                <small>{conflictOpen ? "等待你的选择" : "你已确认当前安排"}</small>
               </div>
             </div>
             <div className={`agent-state-row ${conflictOpen ? "" : "is-done"}`}>
               <span>4</span>
               <div>
-                <strong>二次审计</strong>
-                <small>{conflictOpen ? "裁决后执行" : "重排结果通过"}</small>
+                <strong>按选择重排</strong>
+                <small>{conflictOpen ? "确认后更新任务" : "已按你的选择更新"}</small>
               </div>
             </div>
           </Card>
@@ -316,8 +315,8 @@ export function PlanPage() {
           <section className="mini-board-section">
             <div className="section-heading compact">
               <div>
-                <p className="eyebrow">Evidence</p>
-                <h2>黑板摘要</h2>
+                <p className="eyebrow">相关提醒</p>
+                <h2>待你处理</h2>
               </div>
             </div>
             <BlackboardPanel compact limit={2} />
@@ -326,9 +325,9 @@ export function PlanPage() {
       </section>
 
       <NextStepCard
-        eyebrow="NEXT · PRACTICE"
-        title="用一道题验证计划是否真正可执行"
-        description="练习结果会回写轨迹，也会暴露计划中的高负荷节点。"
+        eyebrow="下一步"
+        title="用一道题检验今晚安排是否合适"
+        description="练习结果会记入轨迹，也能帮助判断哪些任务负荷偏高。"
         label="进入练习"
         to="/practice"
         icon={<FormOutlined />}

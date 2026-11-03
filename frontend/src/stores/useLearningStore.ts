@@ -20,6 +20,7 @@ import type {
   UserOption,
   VerifyAnswerOutput,
 } from "../types/api";
+import type { StudentPersona } from "../types/persona";
 
 export interface ScenarioSetup {
   mode: "final_review" | "catch_up";
@@ -54,6 +55,7 @@ interface LearningState {
   error: string | null;
   demo: AgentDemoFlags;
   showIntervention: boolean;
+  persona: StudentPersona | null;
   setSetup: (setup: ScenarioSetup) => void;
   setSelectedOption: (optionId: string) => void;
   applyPlanResponse: (response: AgentResponse) => void;
@@ -123,6 +125,7 @@ export const useLearningStore = create<LearningState>()(
         time_jump_days: 0,
       },
       showIntervention: false,
+      persona: null,
       setSetup: (setup) => set({ setup }),
       setSelectedOption: (selectedOptionId) => set({ selectedOptionId }),
       applyPlanResponse: (response) =>
@@ -240,6 +243,7 @@ export const useLearningStore = create<LearningState>()(
             time_jump_days: 0,
           },
           showIntervention: false,
+          persona: null,
         }),
       applyWorkspace: (userId, snapshot) =>
         set({
@@ -253,6 +257,7 @@ export const useLearningStore = create<LearningState>()(
           blackboard: snapshot.blackboard,
           attempts: snapshot.attempts,
           showIntervention: snapshot.showIntervention,
+          persona: snapshot.persona,
           setup: snapshot.setup ?? get().setup,
           practice: idlePractice,
           error: null,
@@ -274,6 +279,7 @@ export const useLearningStore = create<LearningState>()(
             blackboard: [],
             attempts: [],
             showIntervention: false,
+            persona: null,
           });
           return;
         }
@@ -291,6 +297,7 @@ export const useLearningStore = create<LearningState>()(
           blackboard: [],
           attempts: [],
           showIntervention: false,
+          persona: null,
         });
         try {
           const snapshot = await loadWorkspaceSnapshot();

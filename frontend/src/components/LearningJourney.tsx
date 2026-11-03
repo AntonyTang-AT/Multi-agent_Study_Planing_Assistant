@@ -32,8 +32,8 @@ export function LearningJourney() {
       label: "计划",
       hint: plan
         ? planStatus === "conflict"
-          ? "待裁决"
-          : "已生成"
+          ? "待调整"
+          : "进行中"
         : "待生成",
       icon: <CalendarOutlined />,
       done: Boolean(plan),
@@ -56,7 +56,7 @@ export function LearningJourney() {
     {
       to: "/blackboard",
       label: "黑板",
-      hint: openEntries.length ? `${openEntries.length} 待处理` : "已清空",
+      hint: openEntries.length ? `${openEntries.length} 待处理` : "暂无",
       icon: <ProjectOutlined />,
       done: openEntries.length === 0,
       alert: openEntries.length > 0,
@@ -64,10 +64,10 @@ export function LearningJourney() {
   ];
 
   return (
-    <nav className="journey-bar" aria-label="学习任务闭环">
+    <nav className="journey-bar" aria-label="学习进度">
       <span className="journey-bar__label">
         <span className="journey-bar__pulse" />
-        学习闭环
+        学习进度
       </span>
       <div className="journey-bar__steps">
         {steps.map((step, index) => (
@@ -100,8 +100,8 @@ export function LearningJourney() {
       </div>
       <span className="journey-bar__summary">
         {openEntries.length
-          ? "所有决定都由你确认"
-          : "当前没有待裁决事项"}
+          ? "有事项需要你确认"
+          : "当前没有待处理事项"}
       </span>
     </nav>
   );

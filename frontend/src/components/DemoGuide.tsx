@@ -2,24 +2,24 @@ import { Drawer, Timeline, Typography } from "antd";
 
 const STEPS = [
   {
-    title: "目标与约束",
-    desc: "在首页设定期末复习 / 跟课补漏、科目与每日分钟；系统据此生成计划。",
+    title: "设定目标",
+    desc: "在首页选择期末复习或跟课补漏，填好科目与每日可用时间。",
   },
   {
-    title: "审计冲突",
-    desc: "计划若不可行，不会偷偷改写，而是上黑板并给出 user_options 供你裁决。",
+    title: "查看并调整计划",
+    desc: "如果今晚时间不够，系统不会偷偷改任务，而会请你选择怎么调整。",
   },
   {
-    title: "校验与弃答",
-    desc: "练习中心走计算校验；不可靠答案可 abstain，不强行给错答。",
+    title: "练习与订正",
+    desc: "做题后留下对错记录；拿不准可以先标记稍后再看。",
   },
   {
-    title: "主动干预",
-    desc: "时间跳跃后可触发干预卡片，仍等待用户决定。",
+    title: "节奏提醒",
+    desc: "连续多天没练时，会建议先做短任务恢复节奏。",
   },
   {
-    title: "个人数据隔离",
-    desc: "登录后计划 / 黑板 / 轨迹绑定当前账号；管理员可看全站分布。",
+    title: "个人学习空间",
+    desc: "每位同学的计划、作答和提醒互相隔离；管理员可看整体概况。",
   },
 ];
 
@@ -32,17 +32,17 @@ export function DemoGuide({
 }) {
   return (
     <Drawer
-      title="项目演示说明"
+      title="如何使用知序"
       placement="right"
       width={420}
       onClose={onClose}
       open={open}
     >
       <Typography.Paragraph>
-        知序 = 传统学习站 + 独立多智能体内核。前端只请求 Backend；AI 全部经网关透传并落库。
+        知序帮助你把期末目标或跟课进度，拆成每天能执行的安排，并留下练习痕迹。
       </Typography.Paragraph>
       <Typography.Paragraph type="secondary">
-        打开 <code>?demo=1</code> 后使用底部 DemoBar，可在 3 分钟内跑通「冲突 → 弃答 → 时间跳跃」。
+        建议先用样例账号体验：林清夏（高数期末）、周予安（大物跟课）、陈可（节奏恢复）。
       </Typography.Paragraph>
       <Timeline
         items={STEPS.map((step) => ({

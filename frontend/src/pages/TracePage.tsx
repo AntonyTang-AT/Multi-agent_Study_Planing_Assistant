@@ -20,75 +20,57 @@ import { NextStepCard } from "../components/NextStepCard";
 import { useAuthStore } from "../stores/useAuthStore";
 import { useLearningStore } from "../stores/useLearningStore";
 
-function buildMastery(attempts: Array<{ question_id: string; is_correct?: boolean | null }>) {
-  const buckets = new Map<string, { total: number; ok: number }>();
-  attempts.forEach((attempt) => {
-    const key = attempt.question_id.split("_").slice(0, 2).join("_") || attempt.question_id;
-    const row = buckets.get(key) ?? { total: 0, ok: 0 };
-    row.total += 1;
-    if (attempt.is_correct) row.ok += 1;
-    buckets.set(key, row);
-  });
-  const colors = ["#2f8667", "#df6841", "#47758e", "#d3a13f"];
-  return Array.from(buckets.entries())
-    .slice(0, 4)
-    .map(([label, row], index) => ({
-      label,
-      value: Math.round((row.ok / Math.max(row.total, 1)) * 100),
-      color: colors[index % colors.length],
-    }));
-}
-
-function buildErrorTags(
-  attempts: Array<{ error_tag?: string | null; is_correct?: boolean | null }>,
-) {
-  const counts = new Map<string, number>();
-  attempts.forEach((attempt) => {
-    if (!attempt.error_tag) return;
-    counts.set(attempt.error_tag, (counts.get(attempt.error_tag) ?? 0) + 1);
-  });
-  return Array.from(counts.entries())
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5);
-}
-
 export function TracePage() {
   const user = useAuthStore((state) => state.user);
   const attempts = useLearningStore((state) => state.attempts);
   const blackboard = useLearningStore((state) => state.blackboard);
   const setup = useLearningStore((state) => state.setup);
+  const persona = useLearningStore((state) => state.persona);
   const passedCount = attempts.filter((attempt) => attempt.is_correct).length;
   const otherCount = attempts.length - passedCount;
-  const mastery = buildMastery(attempts);
-  const errorTags = buildErrorTags(attempts);
+  const mastery =
+    persona?.mastery?.length
+      ? persona.mastery
+      : [];
+  const errorTags = (() => {
+    const counts = new Map<string, number>();
+    attempts.forEach((attempt) => {
+      if (!attempt.error_tag) return;
+      counts.set(attempt.error_tag, (counts.get(attempt.error_tag) ?? 0) + 1);
+    });
+    return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  })();
+  const titleOf = (questionId: string) =>
+    persona?.question_notes?.find((item) => item.question_id === questionId)
+      ?.title || questionId;
+  const displayName = persona?.real_name || user?.display_name || "同学";
 
   const verdictLabel = (isCorrect: boolean | null | undefined) => {
-    if (isCorrect === true) return { text: "passed", color: "green" };
-    if (isCorrect === false) return { text: "failed", color: "red" };
-    return { text: "hint / abstain", color: "gold" };
+    if (isCorrect === true) return { text: "正确", color: "green" };
+    if (isCorrect === false) return { text: "错误", color: "red" };
+    return { text: "未完成", color: "gold" };
   };
 
   return (
     <div className="page-stack">
       <section className="page-intro">
         <div>
-          <p className="eyebrow">Learning Trace · 作答与错因信号</p>
-          <h1>{user?.display_name || "学习者"}的学习轨迹</h1>
+          <p className="eyebrow">学习轨迹</p>
+          <h1>{displayName}的近期学习</h1>
           <p className="page-intro__description">
-            {setup.subject === "physics" ? "大学物理" : "高等数学"} ·{" "}
-            {setup.chapter}。作答、提示、弃答与修正行为写入记忆；评估读取这些信号后再发起元认知反馈。
+            {persona?.course || (setup.subject === "physics" ? "大学物理" : "高等数学")}
+            {" · "}
+            {persona?.semester || setup.chapter}
+            。这里汇总你最近的作答、薄弱点和进度。
           </p>
         </div>
-        <Tag className="scope-tag" icon={<LineChartOutlined />}>
-          GET /api/attempts
-        </Tag>
       </section>
 
       <Row gutter={[12, 12]}>
         <Col xs={24} md={8}>
           <Card>
             <Statistic
-              title="已记录作答"
+              title="近期作答"
               value={attempts.length}
               suffix="次"
               prefix={<ClockCircleOutlined />}
@@ -98,7 +80,7 @@ export function TracePage() {
         <Col xs={24} md={8}>
           <Card>
             <Statistic
-              title="校验通过"
+              title="做对"
               value={passedCount}
               suffix="次"
               prefix={<CheckCircleOutlined />}
@@ -108,7 +90,7 @@ export function TracePage() {
         <Col xs={24} md={8}>
           <Card>
             <Statistic
-              title="失败 / 弃答"
+              title="错误 / 未完成"
               value={otherCount}
               suffix="次"
               prefix={<WarningOutlined />}
@@ -118,7 +100,7 @@ export function TracePage() {
       </Row>
 
       <section className="trace-layout">
-        <Card className="mastery-panel" title="掌握度估计（按本题账号）">
+        <Card className="mastery-panel" title="掌握程度估计">
           <div className="mastery-bars">
             {mastery.length ? (
               mastery.map((item) => (
@@ -130,13 +112,19 @@ export function TracePage() {
                   <Progress
                     percent={item.value}
                     showInfo={false}
-                    strokeColor={item.color}
+                    strokeColor={
+                      item.value >= 70
+                        ? "#2f8667"
+                        : item.value >= 45
+                          ? "#d3a13f"
+                          : "#df6841"
+                    }
                     size="small"
                   />
                 </div>
               ))
             ) : (
-              <Empty description="暂无作答，无法估计掌握度" />
+              <Empty description="完成更多练习后会显示掌握程度" />
             )}
           </div>
         </Card>
@@ -150,12 +138,34 @@ export function TracePage() {
                   <Tag color="orange">{count} 次</Tag>
                 </div>
               ))
+            ) : persona?.weak_points?.length ? (
+              persona.weak_points.map((point) => (
+                <div key={point}>
+                  <span>{point}</span>
+                  <Tag color="gold">关注</Tag>
+                </div>
+              ))
             ) : (
-              <Empty description="暂无错因标签" />
+              <Empty description="暂无错因记录" />
             )}
           </div>
         </Card>
       </section>
+
+      {persona?.recent_days?.length ? (
+        <Card title="学习日程">
+          <Timeline
+            items={persona.recent_days.map((item) => ({
+              children: (
+                <div>
+                  <strong>{item.when}</strong>
+                  <div>{item.text}</div>
+                </div>
+              ),
+            }))}
+          />
+        </Card>
+      ) : null}
 
       <Card title="最近作答" extra={<Link to="/practice">继续练习</Link>}>
         {attempts.length ? (
@@ -167,9 +177,9 @@ export function TracePage() {
                 children: (
                   <div className="attempt-row">
                     <div>
-                      <strong>{attempt.question_id}</strong>
+                      <strong>{titleOf(attempt.question_id)}</strong>
                       <span>
-                        答案：{attempt.answer} · 用时{" "}
+                        你的作答：{attempt.answer} · 用时{" "}
                         {attempt.duration_ms
                           ? `${Math.round(attempt.duration_ms / 1000)} 秒`
                           : "未记录"}
@@ -189,20 +199,21 @@ export function TracePage() {
 
       <Card className="trace-note-card">
         <div>
-          <p className="eyebrow">Metacognitive Feedback</p>
-          <h2>系统不直接替你改计划。</h2>
+          <p className="eyebrow">下一步建议</p>
+          <h2>{persona?.next_action || "根据错因调整后续计划"}</h2>
           <p>
-            当同类错误连续出现或提示依赖升高时，系统会提供结构化选项；用户选择后才影响下一轮计划。
+            {persona?.focus ||
+              "同类错误反复出现时，会在计划或提醒里给出调整建议，最终仍由你确认。"}
           </p>
         </div>
-        <Tag color="green">{blackboard.length} 条黑板事件可供追溯</Tag>
+        <Tag color="green">待处理提醒 {blackboard.filter((b) => b.status === "open").length} 条</Tag>
       </Card>
 
       <NextStepCard
-        eyebrow="NEXT · PLAN"
-        title="把轨迹反馈带回计划"
-        description="错因、提示依赖与中断信号会参与下一轮计划审计，而不是停留在统计页。"
-        label="返回计划"
+        eyebrow="返回计划"
+        title="把轨迹里的问题带回每日安排"
+        description="错因和中断记录会帮助你判断今晚该加练、减负还是换题型。"
+        label="打开学习计划"
         to="/plan"
         icon={<LineChartOutlined />}
       />

@@ -70,14 +70,14 @@ export function MaterialsPage() {
     <div className="page-stack">
       <section className="page-intro">
         <div>
-          <p className="eyebrow">Materials · 可追溯资料库</p>
+          <p className="eyebrow">学习资料</p>
           <h1>学习资料</h1>
           <p className="page-intro__description">
             按学科、章节与场景标签浏览。只登记来源、页码和可信度，不转载教材正文。
           </p>
         </div>
         <Tag className="scope-tag" icon={<SafetyCertificateOutlined />}>
-          GET /api/materials
+          来源可追溯
         </Tag>
       </section>
 
@@ -175,10 +175,10 @@ export function MaterialsPage() {
 
       <Card className="source-note-card">
         <div>
-          <p className="eyebrow">Source & Compliance</p>
-          <h2>资料是计划与出题的证据来源。</h2>
+          <p className="eyebrow">使用说明</p>
+          <h2>资料用来定位章节与页码。</h2>
           <p>
-            官方资料与个人笔记分库存储；AI 生成内容必须带标注，写入官方库前需要审批。
+            这里登记教材、课件和作业的出处与页码，方便对照复习，不转载正文内容。
           </p>
         </div>
         <Space wrap>
@@ -194,10 +194,10 @@ export function MaterialsPage() {
       </Card>
 
       <NextStepCard
-        eyebrow="NEXT · PRACTICE"
-        title="把资料变成一次可校验的练习"
-        description="从当前资料的知识点进入练习，作答和校验结果会自动写入轨迹。"
-        label="用这份资料练习"
+        eyebrow="下一步"
+        title="对照资料做一题"
+        description="选好章节后去练习中心，作答会记入你的学习轨迹。"
+        label="进入练习"
         to="/practice"
         icon={<FileTextOutlined />}
       />

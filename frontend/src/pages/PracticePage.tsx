@@ -118,17 +118,17 @@ export function PracticePage() {
     <div className="page-stack">
       <section className="page-intro">
         <div>
-          <p className="eyebrow">Practice · 作答与计算校验</p>
-          <h1>练习中心</h1>
+          <p className="eyebrow">练习中心</p>
+          <h1>今天练一题</h1>
           <p className="page-intro__description">
-            作答会经过计算检验。未通过时只展示提示与审计轨迹，不把不可靠草稿当作正确答案。
+            提交后会核对结果。拿不准时可以先标记「稍后再看」，不会强行记成正确答案。
           </p>
         </div>
         <div className="page-intro__actions">
-          <Tag color="green">passed</Tag>
-          <Tag color="gold">abstain / hint_mode</Tag>
+          <Tag color="green">正确</Tag>
+          <Tag color="gold">稍后再看</Tag>
           <Link to="/blackboard">
-            <Button icon={<HistoryOutlined />}>查看校验留痕</Button>
+            <Button icon={<HistoryOutlined />}>查看相关提醒</Button>
           </Link>
         </div>
       </section>
@@ -155,7 +155,7 @@ export function PracticePage() {
             <span>{question.question_id}</span>
           </div>
           <div className="question-card__body">
-            <span className="eyebrow">QUESTION</span>
+            <span className="eyebrow">题目</span>
             <h2>{question.stem}</h2>
             <div className="math-expression">
               lim<sub>x→0</sub> (sin 3x − 3x) / x³
@@ -211,8 +211,8 @@ export function PracticePage() {
               type="warning"
               showIcon
               icon={<ExperimentOutlined />}
-              message="abstain · 不强行给出答案"
-              description={practice.message || "校验失败，已进入提示模式。"}
+              message="这题先标记为「稍后再看」"
+              description={practice.message || "当前结果还不够确定，不会记成正确答案。"}
             />
           ) : null}
 
@@ -221,10 +221,9 @@ export function PracticePage() {
             title={
               <Space>
                 <span className="audit-live-dot" />
-                计算检验轨迹
+                核对过程
               </Space>
             }
-            extra={<Tag>LIVE MOCK</Tag>}
           >
             {auditTrail.length ? (
               <Timeline
@@ -232,8 +231,8 @@ export function PracticePage() {
                   color: index === auditTrail.length - 1 ? "red" : "green",
                   children: (
                     <div className="audit-step">
-                      <strong>{item.step || `step ${index + 1}`}</strong>
-                      <span>{item.summary || "已记录校验事件"}</span>
+                      <strong>{item.step || `步骤 ${index + 1}`}</strong>
+                      <span>{item.summary || "已记录核对结果"}</span>
                     </div>
                   ),
                 }))}
@@ -242,33 +241,29 @@ export function PracticePage() {
               <div className="audit-placeholder">
                 <FormOutlined />
                 <strong>等待提交</strong>
-                <span>提交后会展示展开、比较与结论步骤。</span>
+                <span>提交后会显示核对步骤与结论。</span>
               </div>
             )}
             <Divider />
             <div className="audit-contract">
-              <span>合同状态</span>
-              <code>ok | conflict | doubt | failed | abstain | need_user</code>
-            </div>
-            <div className="audit-contract">
-              <span>依赖声明</span>
-              <code>sin(3x) 使用三阶泰勒展开</code>
+              <span>本题注意</span>
+              <code>涉及等价替换时，先确认适用条件</code>
             </div>
           </Card>
 
           <Card className="practice-hint-card">
-            <strong>为什么答题后还要校验？</strong>
+            <strong>为什么提交后还要核对？</strong>
             <p>
-              AI 草稿可能在加减结构中直接做等价替换。计算检验会独立比较表达式差异，失败时只给提示路径。
+              草稿里常见「看起来像对」的变形。系统会再对照一遍结果；拿不准时宁可先标记稍后再看。
             </p>
           </Card>
         </div>
       </section>
 
       <NextStepCard
-        eyebrow="NEXT · TRACE"
-        title="让这次作答进入学习轨迹"
-        description="查看本次正确率、耗时、错因和校验结果，下一轮计划会读取这些信号。"
+        eyebrow="下一步"
+        title="到学习轨迹里回顾这次作答"
+        description="正确率、用时和错因会留在轨迹里，方便安排后面几天练什么。"
         label="查看学习轨迹"
         to="/trace"
         icon={<HistoryOutlined />}
