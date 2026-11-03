@@ -14,9 +14,9 @@ interface UserOptionsCardProps {
 }
 
 const optionDescriptions: Record<string, string> = {
-  extend_time: "保留任务深度，把每日预算调整到 60 分钟",
-  reduce_depth: "保留时间预算，证明任务只保留关键步骤",
-  adjust_goal: "将本轮范围收敛到基础章节，暂缓跨章综合",
+  extend_time: "保留今晚任务深度，把每日可用时间调到约 60 分钟",
+  reduce_depth: "仍用 45 分钟，证明题改成精读关键步骤",
+  adjust_goal: "把连续性证明挪到周末，今晚只做基础题",
 };
 
 export function UserOptionsCard({
@@ -44,21 +44,18 @@ export function UserOptionsCard({
           color={isConflict ? "orange" : "green"}
           icon={isConflict ? <WarningOutlined /> : <CheckCircleOutlined />}
         >
-          {resolved ? "已裁决 · 二次审计通过" : "用户裁决 · 等待选择"}
+          {resolved ? "已按你的选择更新" : "需要你确认今晚怎么安排"}
         </Tag>
         <h2 id="decision-title">
-          {resolved ? "计划已按你的选择完成重排。" : "计划没有可行解，系统没有自行修改。"}
+          {resolved
+            ? "计划已按你的选择调整。"
+            : "今晚时间可能不够，请先选一个可行方案。"}
         </h2>
         <p>
           {resolved
-            ? "裁决、理由与重排结果已写入共享黑板，计划快照可继续编辑。"
-            : message || "审计发现时间预算冲突，请选择一个替代方向。"}
+            ? "调整原因和结果已记在待办提醒里，之后仍可继续修改计划。"
+            : message || "当前任务所需时间超过你设定的每日上限。"}
         </p>
-        <div className="decision-evidence">
-          <span>plan#day3</span>
-          <span>constraint#daily_minutes</span>
-          <span>requires_approval=true</span>
-        </div>
       </div>
 
       {resolved ? (
@@ -66,8 +63,8 @@ export function UserOptionsCard({
           className="decision-resolved"
           type="success"
           showIcon
-          message="计划已保存"
-          description="用户选择已写回 Zustand 状态，黑板条目状态同步更新。"
+          message="安排已更新"
+          description="可以继续按新的每日任务学习，或再到练习中心做题。"
         />
       ) : (
         <div className="decision-panel__options">
@@ -83,19 +80,13 @@ export function UserOptionsCard({
               >
                 <span className="decision-option__title">{option.label}</span>
                 <span className="decision-option__description">
-                  {optionDescriptions[option.id] ||
-                    "提交后写入黑板并保留裁决记录"}
+                  {optionDescriptions[option.id] || "确认后会按这个方向重排今晚任务"}
                 </span>
               </Radio>
             ))}
           </Radio.Group>
-          <Button
-            block
-            type="primary"
-            loading={loading}
-            onClick={onSubmit}
-          >
-            提交裁决并重排
+          <Button block type="primary" loading={loading} onClick={onSubmit}>
+            确认并更新计划
           </Button>
         </div>
       )}

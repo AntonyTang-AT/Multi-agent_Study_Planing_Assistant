@@ -38,7 +38,7 @@ const navigation = [
   { to: "/practice", label: "练习", icon: <FormOutlined /> },
   { to: "/materials", label: "资料", icon: <BookOutlined /> },
   { to: "/trace", label: "轨迹", icon: <LineChartOutlined /> },
-  { to: "/blackboard", label: "黑板", icon: <ProjectOutlined /> },
+  { to: "/blackboard", label: "提醒", icon: <ProjectOutlined /> },
 ];
 
 function Brand() {
@@ -116,7 +116,7 @@ export function AppLayout() {
 
   const enableDemo = () => {
     if (!user) {
-      message.info("请先登录演示账号，再打开演示模式");
+      message.info("请先登录，再打开快捷体验");
       navigate("/login?next=" + encodeURIComponent("/?demo=1"));
       return;
     }
@@ -135,28 +135,27 @@ export function AppLayout() {
         </div>
 
         <div className="topbar__actions">
-          <Tooltip title="前端只请求 backend，不直连 Agent">
+          <Tooltip title={isMockMode() ? "当前为本地预览数据" : "已连接学习服务"}>
             <Tag className="status-tag" icon={<CloudServerOutlined />}>
-              {isMockMode() ? "Mock 模式" : "API 模式"}
+              {isMockMode() ? "本地预览" : "已连接"}
             </Tag>
           </Tooltip>
-          <Tag className="phase-tag">MVP · 全链路</Tag>
-          <Tooltip title="项目演示说明">
+          <Tooltip title="使用说明">
             <Button
               type="text"
               icon={<QuestionCircleOutlined />}
-              aria-label="项目说明"
+              aria-label="使用说明"
               onClick={() => setGuideOpen(true)}
             />
           </Tooltip>
-          <Tooltip title="打开 3 分钟演示控制条">
+          <Tooltip title="打开快捷体验条（可选）">
             <Button
               className="demo-mode-button"
               type={demoMode ? "primary" : "default"}
               icon={<PlayCircleOutlined />}
               onClick={enableDemo}
             >
-              <span className="demo-mode-label">演示</span>
+              <span className="demo-mode-label">体验</span>
             </Button>
           </Tooltip>
           {user ? (
@@ -218,9 +217,9 @@ export function AppLayout() {
       </main>
 
       <footer className="app-footer">
-        <span>知序学习助手 · Web Frontend</span>
+        <span>知序学习助手</span>
         <span className="app-footer__meta">
-          <AppstoreOutlined /> React 18 · Vite · TypeScript · Ant Design 5
+          <AppstoreOutlined /> 期末复习 · 跟课补漏
         </span>
       </footer>
       <DemoBar />
@@ -236,9 +235,9 @@ export function AppLayout() {
       >
         <Navigation mobile demo={demoMode} />
         <div className="mobile-drawer__note">
-          <strong>完整学习闭环</strong>
+          <strong>完整学习路径</strong>
           <p>
-            场景、计划、练习、轨迹与黑板共享同一份状态；智能不可用时仍保留传统学习路径。
+            计划、练习、轨迹与提醒相互联动；网络异常时仍可浏览资料与本地安排。
           </p>
         </div>
       </Drawer>

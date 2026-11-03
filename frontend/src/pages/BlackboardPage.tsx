@@ -71,7 +71,7 @@ export function BlackboardPage() {
         note: "用户在共享黑板完成裁决",
       });
       resolveEntry(entry.entry_id);
-      message.success("黑板条目已处理并留痕");
+      message.success("已标记为处理完成");
     } catch (requestError) {
       setError(agentErrorMessage(requestError));
       message.error(agentErrorMessage(requestError));
@@ -82,10 +82,10 @@ export function BlackboardPage() {
     <div className="page-stack">
       <section className="page-intro">
         <div>
-          <p className="eyebrow">Shared Blackboard · 过程可见</p>
-          <h1>共享黑板</h1>
+          <p className="eyebrow">学习提醒</p>
+          <h1>需要你确认的事项</h1>
           <p className="page-intro__description">
-            冲突、质疑、干预与阶段结论集中在这里。前端只负责展示证据和提交用户裁决，不改写 Agent 判断。
+            时间冲突、题目提醒、节奏中断都会集中在这里。重要调整仍由你确认后才会改写计划。
           </p>
         </div>
         <div className="page-intro__actions">
@@ -106,7 +106,7 @@ export function BlackboardPage() {
         <Alert
           type="warning"
           showIcon
-          message="黑板同步失败，仍展示本地已加载条目"
+          message="提醒同步失败，仍展示本地已加载内容"
           description={error}
           closable
           onClose={() => setError(null)}
@@ -117,7 +117,7 @@ export function BlackboardPage() {
         <Col xs={12} md={6}>
           <Card>
             <Statistic
-              title="待裁决"
+              title="待处理"
               value={openCount}
               prefix={<ExclamationCircleOutlined />}
             />
@@ -135,7 +135,7 @@ export function BlackboardPage() {
         <Col xs={12} md={6}>
           <Card>
             <Statistic
-              title="证据引用"
+              title="相关依据"
               value={evidenceCount}
               prefix={<ProjectOutlined />}
             />
@@ -143,7 +143,7 @@ export function BlackboardPage() {
         </Col>
         <Col xs={12} md={6}>
           <Card>
-            <Statistic title="数据源" value="Zustand + API" />
+            <Statistic title="当前账号" value="个人" />
           </Card>
         </Col>
       </Row>
@@ -154,24 +154,22 @@ export function BlackboardPage() {
             value={filter}
             onChange={(value) => setFilter(value as BoardFilter)}
             options={[
-              { label: "全部条目", value: "all" },
+              { label: "全部", value: "all" },
               { label: "待处理", value: "open" },
               { label: "已处理", value: "resolved" },
             ]}
           />
-          <span>
-            条目状态来自 <code>BlackboardEntry.status</code>
-          </span>
+          <span>只显示当前登录账号的提醒</span>
         </div>
       </Card>
 
       <BlackboardPanel filter={filter} onResolve={handleResolve} />
 
       <NextStepCard
-        eyebrow="NEXT · PLAN"
-        title="把用户裁决写回学习计划"
-        description="黑板上的冲突和干预结论会重新进入计划页，由你确认后再持久化。"
-        label="返回计划"
+        eyebrow="下一步"
+        title="回到学习计划继续今晚安排"
+        description="确认冲突或提醒后，可在计划页查看更新后的每日任务。"
+        label="打开学习计划"
         to="/plan"
         icon={<ProjectOutlined />}
       />

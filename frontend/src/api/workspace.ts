@@ -12,6 +12,7 @@ import type {
   Subject,
   UserOption,
 } from "../types/api";
+import type { StudentPersona } from "../types/persona";
 import type { ScenarioSetup } from "../stores/useLearningStore";
 
 export interface DemoPlanMeta {
@@ -21,6 +22,7 @@ export interface DemoPlanMeta {
   selected_option_id?: string;
   show_intervention?: boolean;
   setup?: Partial<ScenarioSetup>;
+  persona?: StudentPersona;
 }
 
 export interface WorkspaceSnapshot {
@@ -34,6 +36,7 @@ export interface WorkspaceSnapshot {
   showIntervention: boolean;
   setup: ScenarioSetup | null;
   demoTimeJumpDays: number;
+  persona: StudentPersona | null;
 }
 
 type PlanWithDemo = Plan & { _demo?: DemoPlanMeta };
@@ -45,7 +48,7 @@ const defaultSetup = (plan: Plan | null, meta?: DemoPlanMeta): ScenarioSetup => 
       subject: (meta.setup.subject as Subject) || "math",
       dailyMinutes: meta.setup.dailyMinutes ?? plan?.daily_minutes_budget ?? 45,
       examDate: meta.setup.examDate ?? "2026-11-22",
-      chapter: meta.setup.chapter ?? "第 2 章",
+      chapter: meta.setup.chapter ?? "当前章节",
     };
   }
   const firstSubject = plan?.tasks?.[0]?.subject ?? "math";
@@ -67,7 +70,6 @@ const stripDemo = (raw: PlanWithDemo | null): {
   return { plan: plan as Plan, meta: _demo ?? {} };
 };
 
-/** 按当前登录用户拉取计划 / 黑板 / 作答，并解析种子里的 `_demo` 展示态。 */
 export async function loadWorkspaceSnapshot(): Promise<WorkspaceSnapshot> {
   const [rawPlan, blackboard, attempts] = await Promise.all([
     fetchCurrentPlan() as Promise<PlanWithDemo | null>,
@@ -90,14 +92,14 @@ export async function loadWorkspaceSnapshot(): Promise<WorkspaceSnapshot> {
     planStatus,
     planMessage:
       meta.plan_message ||
-      (plan ? "已读取当前账号的学习计划" : ""),
+      (plan ? "已载入你的学习计划" : ""),
     userOptions:
       meta.user_options ||
       (openConflict
         ? [
-            { id: "extend_time", label: "延长每日学习时间" },
-            { id: "reduce_depth", label: "降低复习深度" },
-            { id: "adjust_goal", label: "调整目标" },
+            { id: "extend_time", label: "每天多挤出一点时间" },
+            { id: "reduce_depth", label: "先降低今晚任务难度" },
+            { id: "adjust_goal", label: "把难点挪到周末" },
           ]
         : []),
     selectedOptionId: meta.selected_option_id || "reduce_depth",
@@ -106,5 +108,6 @@ export async function loadWorkspaceSnapshot(): Promise<WorkspaceSnapshot> {
     showIntervention: Boolean(meta.show_intervention || openIntervention),
     setup: plan ? defaultSetup(plan, meta) : null,
     demoTimeJumpDays: openIntervention ? 3 : 0,
+    persona: meta.persona ?? null,
   };
 }

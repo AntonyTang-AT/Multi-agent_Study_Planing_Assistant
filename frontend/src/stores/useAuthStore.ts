@@ -35,24 +35,24 @@ export const DEMO_ACCOUNTS = [
     username: "math",
     password: "demo",
     label: "math / demo",
-    hint: "高数冲突计划",
+    hint: "林清夏 · 高数期末",
   },
   {
     username: "phys",
     password: "demo",
     label: "phys / demo",
-    hint: "大物跟课",
+    hint: "周予安 · 大物跟课",
   },
   {
     username: "catch",
     password: "demo",
     label: "catch / demo",
-    hint: "主动干预",
+    hint: "陈可 · 节奏恢复",
   },
   {
     username: "admin",
     password: "admin",
     label: "admin / admin",
-    hint: "管理看板",
+    hint: "教学管理",
   },
 ] as const;

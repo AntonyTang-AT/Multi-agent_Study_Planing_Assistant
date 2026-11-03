@@ -89,10 +89,10 @@ export function ScenarioWizard() {
     <section className="scenario-card" aria-labelledby="scenario-title">
       <div className="scenario-card__head">
         <div>
-          <span className="scenario-card__eyebrow">START HERE</span>
+          <span className="scenario-card__eyebrow">开始安排</span>
           <h2 id="scenario-title">设定这次学习</h2>
         </div>
-        <Tag color="green">Mock / API 统一合同</Tag>
+        <Tag color="green">期末 / 跟课</Tag>
       </div>
 
       {error ? (
@@ -161,9 +161,9 @@ export function ScenarioWizard() {
 
         <div className="scenario-hints">
           <span>
-            <ExperimentOutlined /> 45 分钟以内会触发计划审计冲突
+            <ExperimentOutlined /> 每日时间偏紧时，系统会请你确认怎么取舍
           </span>
-          <span>冲突、校验与黑板状态均来自同一响应合同</span>
+          <span>生成后可在计划页继续调整</span>
         </div>
 
         <Space className="scenario-actions" direction="vertical" size={8}>
@@ -175,7 +175,7 @@ export function ScenarioWizard() {
             loading={loading}
             icon={<ArrowRightOutlined />}
           >
-            生成并审计计划
+            生成学习计划
           </Button>
           <Button
             block

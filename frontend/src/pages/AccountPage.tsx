@@ -6,11 +6,6 @@ import { changePassword } from "../api/auth";
 import { useAuthStore } from "../stores/useAuthStore";
 import { useLearningStore } from "../stores/useLearningStore";
 
-const scenarioLabel: Record<string, string> = {
-  final_review: "期末复习",
-  catch_up: "跟课补漏",
-};
-
 export function AccountPage() {
   const user = useAuthStore((s) => s.user);
   const plan = useLearningStore((s) => s.plan);
@@ -18,12 +13,14 @@ export function AccountPage() {
   const setup = useLearningStore((s) => s.setup);
   const attempts = useLearningStore((s) => s.attempts);
   const blackboard = useLearningStore((s) => s.blackboard);
+  const persona = useLearningStore((s) => s.persona);
   const [loading, setLoading] = useState(false);
 
   if (!user) return null;
 
   const openBoard = blackboard.filter((item) => item.status === "open");
   const passed = attempts.filter((item) => item.is_correct === true).length;
+  const displayName = persona?.real_name || user.display_name;
 
   const onFinish = async (values: {
     old_password: string;
@@ -43,61 +40,85 @@ export function AccountPage() {
   return (
     <div className="page-stack">
       <header className="page-header">
-        <Typography.Title level={2}>账号</Typography.Title>
+        <Typography.Title level={2}>我的账号</Typography.Title>
         <Typography.Paragraph type="secondary">
-          当前登录身份与个人学习痕迹。计划 / 黑板 / 轨迹按用户隔离存储。
+          查看个人学习概况，或修改登录密码。每位同学的计划与作答互相隔离。
         </Typography.Paragraph>
       </header>
 
       <Card className="surface-card" title="基本信息">
         <p>
-          <strong>用户名</strong>：{user.username || "—"}
+          <strong>姓名</strong>：{displayName}
         </p>
         <p>
-          <strong>显示名</strong>：{user.display_name}
+          <strong>登录名</strong>：{user.username || "—"}
         </p>
-        <p>
-          <strong>角色</strong>：{user.role}
-        </p>
-        <p>
-          <strong>用户 ID</strong>：{user.id}
-        </p>
+        {persona ? (
+          <>
+            <p>
+              <strong>专业班级</strong>：{persona.major}
+            </p>
+            <p>
+              <strong>课程</strong>：{persona.course}
+            </p>
+            <p>
+              <strong>学期状态</strong>：{persona.semester}
+            </p>
+          </>
+        ) : (
+          <p>
+            <strong>角色</strong>：{user.role === "admin" ? "管理员" : "学生"}
+          </p>
+        )}
       </Card>
 
       {user.role !== "admin" ? (
         <Card
           className="surface-card"
-          title="本账号学习快照"
+          title="个人学习概况"
           extra={
             <Link to="/plan">
-              <Button type="link">查看计划</Button>
+              <Button type="link">打开计划</Button>
             </Link>
           }
         >
           <p>
-            <strong>场景</strong>：
-            {scenarioLabel[setup.mode] || setup.mode} · {setup.subject} ·{" "}
-            {setup.chapter}
+            <strong>当前目标</strong>：{plan?.goal || "尚未生成计划"}
           </p>
           <p>
-            <strong>计划目标</strong>：{plan?.goal || "尚未生成计划"}
+            <strong>课程进度</strong>：{setup.chapter} · 每日{" "}
+            {plan?.daily_minutes_budget ?? setup.dailyMinutes} 分钟
           </p>
           <p>
             <strong>状态</strong>：{" "}
             <Tag color={planStatus === "conflict" ? "orange" : "green"}>
               {planStatus === "conflict"
-                ? "冲突待裁决"
+                ? "今晚安排待调整"
                 : plan
-                  ? "已有计划"
-                  : "空"}
+                  ? "计划进行中"
+                  : "尚未开始"}
             </Tag>
             <Tag>任务 {plan?.tasks.length ?? 0}</Tag>
-            <Tag>作答 {attempts.length}</Tag>
-            <Tag color="gold">开放黑板 {openBoard.length}</Tag>
+            <Tag>
+              作答 {passed}/{attempts.length}
+            </Tag>
+            <Tag color="gold">待处理 {openBoard.length}</Tag>
           </p>
-          <p>
-            <strong>作答通过</strong>：{passed} / {attempts.length}
-          </p>
+          {persona?.focus ? (
+            <p>
+              <strong>本阶段重点</strong>：{persona.focus}
+            </p>
+          ) : null}
+          {persona?.weak_points?.length ? (
+            <p>
+              <strong>薄弱点</strong>：{persona.weak_points.join("；")}
+            </p>
+          ) : null}
+          {persona?.materials_focus ? (
+            <p>
+              <strong>常用资料</strong>：{persona.materials_focus}
+            </p>
+          ) : null}
           {openBoard[0] ? (
             <p>
               <strong>待处理</strong>：{openBoard[0].summary}

@@ -16,11 +16,11 @@ interface BlackboardPanelProps {
 }
 
 const typeLabels: Record<string, string> = {
-  conflict: "计划冲突",
-  challenge: "结构化质疑",
-  intervention: "主动干预",
-  hypothesis: "待验证假设",
-  stage_conclusion: "阶段结论",
+  conflict: "时间冲突",
+  challenge: "题目提醒",
+  intervention: "节奏提醒",
+  hypothesis: "学习建议",
+  stage_conclusion: "阶段小结",
 };
 
 const typeColors: Record<string, string> = {
@@ -90,7 +90,7 @@ export function BlackboardPanel({
                   }
                 }}
               >
-                处理
+                已了解
               </Button>
             ) : (
               <Tag color="green" icon={<ExclamationCircleOutlined />}>
