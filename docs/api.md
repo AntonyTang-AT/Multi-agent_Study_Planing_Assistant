@@ -105,13 +105,13 @@ Content-Type: application/json
 
 条目通常由 B5 AI 落库写入；无 AI 时列表可为空。
 
-## AI 网关（B4 · 仅转发）
+## AI 网关（B4 转发 · B5 落库）
 
 `POST /api/ai/{intent}`
 
 1. 校验 intent 白名单（见 [`agent-api.md`](./agent-api.md) §4，含 `echo`）  
 2. 将 body 中 `intent` 设为路径值后透传 → `POST {AGENT_BASE_URL}/agent/v1/invoke`  
-3. 成功：原样返回 Agent JSON（**B4 不落库**；落库见 B5）  
+3. 成功：原样返回 Agent JSON；**B5** 同时写入 `ai_call_logs`，并 upsert `blackboard_entries` / `plans` 草稿（不改写 Agent 字段语义）  
 4. 连接失败 / 超时：HTTP **503**  
    `{ "code": "agent_unavailable", "message": "智能服务暂不可用" }`  
 5. 未知 intent：HTTP **400** `{ "code": "unknown_intent", ... }`  
@@ -134,6 +134,12 @@ Content-Type: application/json
 - [`docs/agent-api.md`](./agent-api.md)  
 - [`agent/examples/`](../agent/examples/)
 
-## 演示
+## 演示（B5）
 
 `POST /api/demo/time-jump` — `{ "days": 2 }`
+
+- 只更新会话 `demo_time_jump_days`，**不调用 Agent、不改计划/黑板**  
+- 缺省 `X-User-Id` 时回退 `u_web_demo`  
+- 之后 `POST /api/ai/*` 若会话偏移 `> 0`，网关注入 `demo.time_jump_days`（不覆盖请求中已显式正值）
+
+答辩种子库：`python -m scripts.seed_or_import --export-demo` / `--restore-demo`（见 `backend/README.md`）。

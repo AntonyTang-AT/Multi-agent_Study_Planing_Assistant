@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Generator
 
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.config import get_settings
@@ -18,8 +18,27 @@ engine = create_engine(
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 
+def _sqlite_add_missing_columns() -> None:
+    """轻量补列：旧 SQLite 上 create_all 不会 ALTER 已有表。"""
+    if not _settings.database_url.startswith("sqlite"):
+        return
+    insp = inspect(engine)
+    if "users" not in insp.get_table_names():
+        return
+    cols = {c["name"] for c in insp.get_columns("users")}
+    if "demo_time_jump_days" not in cols:
+        with engine.begin() as conn:
+            conn.execute(
+                text(
+                    "ALTER TABLE users ADD COLUMN demo_time_jump_days INTEGER "
+                    "NOT NULL DEFAULT 0"
+                )
+            )
+
+
 def init_db() -> None:
     Base.metadata.create_all(bind=engine)
+    _sqlite_add_missing_columns()
 
 
 def get_db() -> Generator[Session, None, None]:
