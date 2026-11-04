@@ -163,7 +163,10 @@ export function MaterialsPage() {
       );
       const url = URL.createObjectURL(response.data);
       if (preview) {
-        setPreviewUrl(url);
+        setPreviewUrl((prev) => {
+          if (prev) URL.revokeObjectURL(prev);
+          return url;
+        });
       } else {
         const link = document.createElement("a");
         link.href = url;
@@ -176,7 +179,11 @@ export function MaterialsPage() {
       let message = "资料暂时无法打开，请稍后重试或下载原件";
       const blob = (error as { response?: { data?: unknown } }).response?.data;
       if (blob instanceof Blob) {
-        try { message = JSON.parse(await blob.text()).message || message; } catch { /* keep fallback */ }
+        try {
+          message = JSON.parse(await blob.text()).message || message;
+        } catch {
+          /* keep fallback */
+        }
       }
       setFileError(message);
     } finally {

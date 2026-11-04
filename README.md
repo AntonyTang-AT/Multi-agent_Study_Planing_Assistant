@@ -1,50 +1,95 @@
-# 两项修复与 PR 提交说明
+# 多智能体学习计划助手（高数 / 大物）
 
-目标仓库：AntonyTang-AT/Multi-agent_Study_Planing_Assistant
-基线：main（已含 PR #65 的章级导学）
+面向大学生 **期末复习** 与 **跟课补漏** 的 AI+学习生活项目。  
+采用「传统 Web 学习站 + 独立多智能体智能内核」架构：前端与后端负责界面与数据存取，**全部 AI 能力封装在 `agent/` 服务中**，对外只保留稳定的输入 / 输出接口。
 
-当前状态：代码已经完成并形成两个本地提交；GitHub App 在创建 Git tree 时返回
-403 Resource not accessible by integration，尚未 push 或创建任何 PR。
-账号的 push:true 与 App 自身写入授权是不同权限。
+仓库地址：<https://github.com/AntonyTang-AT/Multi-agent_Learning_Planning_Assistant>
 
-## PR 1 标题
-fix(frontend): 修复题目与学习记录中的 LaTeX 公式显示
+---
 
-题干、题单、选择项、作答提示、历史作答和资料导学样例此前直接显示 LaTeX 源码。
-增加统一 KaTeX 渲染组件，支持 $…$、$$…$$、\\(…\\)、\\[…\\]；保留普通文本，
-错误公式回退显示原文；关闭可信 HTML 命令，普通文本仍由 React 转义。
-字体随前端构建发布，无需外部 CDN。
+## 一句话创新
 
-验证：npm run typecheck、npm run build 通过；7 项本地渲染检查通过
-（四种定界符、普通文本、HTML 转义、错误公式回退）。
-对应补丁：0001-*.patch。
+别人的多 Agent 在分工生成；我们的多 Agent 在分工**质疑、校验和协商**。  
+计划冲突与不可靠答案会显式暴露，由用户裁决，系统不偷偷改计划、不强行给错答。
 
-## PR 2 标题
-fix(materials): 支持对应资料原件下载与 PDF 预览
+---
 
-资料页此前只能查看章级导学，不能打开对应原件。新增按 material_id 下载和预览接口；
-实时 available/preview_available 字段；前端提供原件下载、预览抽屉、缺失提示。
-PDF 直接预览，PPT/PPTX/DOC/DOCX 使用 LibreOffice 转为 PDF，原件保留供下载。
-拒绝绝对路径、反斜杠路径、目录越界及越界软链接；每次转换隔离临时目录/配置，
-设置 60 秒超时并清理临时文件。文档与环境变量同步。
+## 目录结构
 
-验证：backend/tests 8 passed；前端类型检查、生产构建通过。
-转换测试使用模拟 LibreOffice；没有在本环境用真实 Office 文件做转换验证。
-部署要求：安装 LibreOffice，设置 MATERIALS_ROOT，并按资料索引中的相对目录部署原件。
-仓库没有教材/PPT 原件，提交代码不会自动补齐文件；仅部署允许向站点访问者提供的资料。
-对应补丁：0002-*.patch。
-
-## 在本机应用
-
-在目标仓库的最新 main 上创建工作分支后，按顺序应用：
-
-```bash
-git switch -c fix/math-and-materials
-git am /path/to/0001-fix-frontend-render-mathematical-content-with-KaTeX.patch
-git am /path/to/0002-fix-materials-serve-registered-originals-and-PDF-pre.patch
+```text
+├── frontend/     # Web 前端（React + Vite + TS + Ant Design）
+├── backend/      # 传统业务后端（FastAPI + SQLite，AI 仅转发）
+├── agent/        # 多智能体智能内核（唯一调用 LLM / 校验处）
+├── data/         # 高数·大物结构化资料包
+├── docs/         # 方案、分工、技术路线、接口与任务计划
+├── poster/       # A2 海报
+├── pitch/        # PPT、路演稿、个人贡献备忘
+└── scripts/      # 可选一键启动脚本
 ```
 
-两个补丁按顺序生成，可一起提交 PR。若分成两个 PR，先提交第一个，第二个以第一个分支
-为基线；第一个合并后把第二个 PR 的目标分支切换到 main。
+更细说明见 [`docs/项目文件结构.md`](docs/项目文件结构.md)。
 
-仓库授权修复后可直接从这两个提交继续，无需重做需求。
+---
+
+## 已锁定技术栈
+
+| 层级 | 选型 |
+|---|---|
+| 前端 | React 18 + Vite + TypeScript + Ant Design 5 + React Router + Axios + Zustand |
+| 后端 | FastAPI + SQLAlchemy 2 + SQLite + Pydantic v2 + httpx |
+| 智能内核 | FastAPI + intent 路由 + Worker 模块 + DeepSeek + SymPy（不强制 CrewAI） |
+| 资料 | UTF-8 JSON + 校验脚本 |
+| 本地端口 | 前端 `5173` · 后端 `8000` · Agent `8001` |
+
+---
+
+## 角色与文档入口
+
+| 角色 | 文档 |
+|---|---|
+| 总方案 | [`docs/学习计划多智能体系统·形式化整体方案.md`](docs/学习计划多智能体系统·形式化整体方案.md) |
+| 分工边界 | [`docs/五人分工与细化落地说明.md`](docs/五人分工与细化落地说明.md) |
+| 逐日任务 | [`docs/五人详细任务计划.md`](docs/五人详细任务计划.md) |
+| 技术路线 | [`docs/技术路线与方案.md`](docs/技术路线与方案.md) |
+| 分人职责 | [`docs/roles/`](docs/roles/) |
+| 业务 API | [`docs/api.md`](docs/api.md) |
+| Agent I/O | [`docs/agent-api.md`](docs/agent-api.md) |
+| **前后端联调（先读）** | [`docs/前后端联调接口说明.md`](docs/前后端联调接口说明.md) |
+
+---
+
+## 任务看板（Issue + Project）
+
+- Issues：https://github.com/AntonyTang-AT/Multi-agent_Learning_Planning_Assistant/issues
+- Project：https://github.com/users/AntonyTang-AT/projects/4
+- 标签：`role:*`（前端/后端/agent/资料/答辩/闸门）、`phase:pre-12|post-12|gate`、`priority:P0|P1`
+- 接取方式：在 Issue 点 **Assignees** 认领自己，并在 Project 把 **Status** 改为 `In Progress`；完成后改为 `Done` 并关闭 Issue
+
+## 本地开发（骨架阶段）
+
+当前仓库以**目录骨架 + 文档 + 样例资料**为主，三端工程将按任务计划逐步初始化。
+
+1. 克隆本仓库  
+2. 复制 `.env.example` 为 `.env`，填入本地密钥（**不要提交 `.env`**）  
+3. 校验样例资料：
+
+```bash
+python data/scripts/validate_schema.py
+```
+
+4. 后续分别在 `frontend/`、`backend/`、`agent/` 按各自 README 启动。
+
+---
+
+## 安全说明
+
+- `.env` 已写入 `.gitignore`，禁止把 GitHub Token、LLM Key 提交进仓库。  
+- 若 Token 曾在聊天、截图或公开场合出现，请立刻到 GitHub → Settings → Developer settings 中**撤销并重新生成**。
+
+---
+
+## 许可证与资料合规
+
+课程答辩学习使用。教材 / 真题等资料仅作结构化摘录与元数据整理，详见 `data/README.md`。合成演示数据须标注 `synthetic`。
+
+资料页支持在服务器配置 `MATERIALS_ROOT` 后预览/下载已登记原件（见 `backend/README.md`）。**仓库与默认部署不含教材 PDF/PPT**；仅放入已获授权、允许向站点访问者提供的文件。索引里的 `status=downloaded` 不代表线上已有文件。
