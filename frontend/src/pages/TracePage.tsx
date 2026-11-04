@@ -1,3 +1,4 @@
+import { MathText } from "../components/MathText";
 import {
   CheckCircleOutlined,
   ClockCircleOutlined,
@@ -179,7 +180,7 @@ export function TracePage() {
                     <div>
                       <strong>{titleOf(attempt.question_id)}</strong>
                       <span>
-                        你的作答：{attempt.answer} · 用时{" "}
+                        你的作答：<MathText text={attempt.answer} /> · 用时{" "}
                         {attempt.duration_ms
                           ? `${Math.round(attempt.duration_ms / 1000)} 秒`
                           : "未记录"}

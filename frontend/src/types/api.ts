@@ -60,6 +60,8 @@ export interface Material {
   kind: "textbook" | "courseware" | "homework" | "answer_book" | "textbook_reference";
   title: string;
   file?: string;
+  available?: boolean;
+  preview_available?: boolean;
   page_range?: [number, number] | null;
   page_status?: string;
   license_note: string;

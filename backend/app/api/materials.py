@@ -157,3 +157,23 @@ def get_chapter_guide(chapter_id: str) -> dict:
     payload["resolved_from"] = chapter_id
     payload["chapter_id"] = resolved
     return payload
+
+
+@router.get("/api/materials/{material_id}/download")
+def download_material(material_id: str, db: Session = Depends(get_db)):
+    return _serve_material(material_id, db, preview=False)
+
+
+@router.get("/api/materials/{material_id}/preview")
+def preview_material(material_id: str, db: Session = Depends(get_db)):
+    return _serve_material(material_id, db, preview=True)
+
+
+def _serve_material(material_id: str, db: Session, *, preview: bool):
+    from app.errors import AppError
+    from app.services.material_files import material_response
+
+    material = db.get(Material, material_id)
+    if material is None:
+        raise AppError(code="material_not_found", message="资料不存在", status_code=404)
+    return material_response(material.file, preview=preview)

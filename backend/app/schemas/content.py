@@ -6,6 +6,7 @@ import json
 from typing import Any
 
 from app.db.models import Material, Question
+from app.services.material_files import file_status
 
 
 def _loads(raw: str | None, default: Any = None) -> Any:
@@ -21,6 +22,7 @@ def material_to_dict(row: Material) -> dict[str, Any]:
     page_range = _loads(row.page_range, None)
     return {
         "material_id": row.id,
+        **file_status(row.file),
         "subject": row.subject,
         "chapter_id": row.chapter_id or "",
         "kind": row.kind,

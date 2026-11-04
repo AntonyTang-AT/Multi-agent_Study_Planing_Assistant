@@ -35,5 +35,9 @@ backend/data_local/
 .coverage
 htmlcov/
 
+# 资料原件（仅元数据入库；原件按 MATERIALS_ROOT 本地/服务器部署）
+source/_原始下载/
+source/_raw/
+
 .tmp-deploy/
 

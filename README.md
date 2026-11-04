@@ -91,3 +91,5 @@ python data/scripts/validate_schema.py
 ## 许可证与资料合规
 
 课程答辩学习使用。教材 / 真题等资料仅作结构化摘录与元数据整理，详见 `data/README.md`。合成演示数据须标注 `synthetic`。
+
+资料页支持在服务器配置 `MATERIALS_ROOT` 后预览/下载已登记原件（见 `backend/README.md`）。**仓库与默认部署不含教材 PDF/PPT**；仅放入已获授权、允许向站点访问者提供的文件。索引里的 `status=downloaded` 不代表线上已有文件。

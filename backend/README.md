@@ -97,3 +97,26 @@ Agent 未启动时 `agent` 应为 `"down"`，`db` 仍为 `"up"`，不阻塞后�
 1. 本服务 `:8000`
 2. 前端 `.env`：`VITE_API_BASE=http://127.0.0.1:8000`（或 localhost）、`VITE_USE_MOCK=false`
 3. 可选 Agent：`cd agent && uvicorn app.main:app --port 8001`
+
+## 资料原件与预览
+
+资料索引只登记元数据，仓库不包含教材/PPT 原件。将获授权用于站点的文件放入
+`MATERIALS_ROOT`（建议使用绝对路径），并保留 `data/materials/index.json` 中 `file`
+字段的相对目录与文件名。默认目录为仓库下的 `source/_原始下载/`。
+索引的 `status=downloaded` 不代表部署服务器实际有文件；接口实时返回
+`available` 与 `preview_available`，前端据此启用原件按钮。
+
+- `GET /api/materials/{material_id}/download`：下载该 ID 登记的原件。
+- `GET /api/materials/{material_id}/preview`：PDF 直接内联；PPT/PPTX/DOC/DOCX
+  通过 LibreOffice 转换为 PDF，原件不变。
+- Office 预览需在服务器安装 LibreOffice，可用 `LIBREOFFICE_BINARY` 指定可执行文件。
+  每次转换使用独立临时目录和用户配置，60 秒超时，响应发送后清理。
+- 原件缺失返回 404 `material_file_missing`；转换服务缺失返回 503
+  `preview_unavailable`；转换失败返回 503 `preview_failed`。预览不可用时仍可下载原件。
+- 仅通过已登记的 `material_id` 查文件；拒绝绝对路径、反斜杠路径、越界路径和越界软链接。
+  不提供任意路径读取接口。与现有资料查询一样，这些端点为公开路由；部署时仅放入允许向
+  站点访问者提供的文件，内部资料应先增加访问控制。
+
+验证：`PYTHONPATH=backend pytest backend/tests -q`（仓库根目录执行）。
+测试覆盖 PDF 下载/预览、缺失文件、路径和软链接越界、Office 转换及清理、转换超时。
+Office 转换测试模拟 LibreOffice；部署后还需用真实 PPT/PPTX/DOC/DOCX 验证转换与字体。
