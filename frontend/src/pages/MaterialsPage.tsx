@@ -9,6 +9,8 @@ import {
   Alert,
   Button,
   Card,
+  Collapse,
+  Drawer,
   Empty,
   Input,
   Segmented,
@@ -20,10 +22,15 @@ import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
 import { agentErrorMessage } from "../api/ai";
-import { fetchMaterials, type MaterialQuery } from "../api/backend";
+import {
+  fetchChapterGuide,
+  fetchMaterials,
+  fetchQuestions,
+  type MaterialQuery,
+} from "../api/backend";
 import { NextStepCard } from "../components/NextStepCard";
 import { chapterById } from "../data/chapters";
-import type { Material, Subject } from "../types/api";
+import type { ChapterGuide, Material, Question, Subject } from "../types/api";
 
 type SubjectFilter = "all" | Subject;
 type KindFilter = "all" | Material["kind"];
@@ -34,6 +41,13 @@ const materialKind: Record<string, string> = {
   homework: "习题",
   answer_book: "答案",
   textbook_reference: "参考书",
+};
+
+const questionTypeLabel: Record<string, string> = {
+  fill: "填空",
+  choice: "选择",
+  calc: "计算",
+  proof: "证明",
 };
 
 export function MaterialsPage() {
@@ -53,6 +67,12 @@ export function MaterialsPage() {
   const [materials, setMaterials] = useState<Material[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [activeMaterial, setActiveMaterial] = useState<Material | null>(null);
+  const [guide, setGuide] = useState<ChapterGuide | null>(null);
+  const [samples, setSamples] = useState<Question[]>([]);
+  const [guideLoading, setGuideLoading] = useState(false);
+  const [guideError, setGuideError] = useState<string | null>(null);
 
   useEffect(() => {
     const nextSubject = searchParams.get("subject");
@@ -92,6 +112,40 @@ export function MaterialsPage() {
     };
   }, [chapter, keyword, kind, subject]);
 
+  useEffect(() => {
+    if (!activeMaterial) {
+      setGuide(null);
+      setSamples([]);
+      setGuideError(null);
+      return;
+    }
+    let alive = true;
+    const chapterId = activeMaterial.chapter_id;
+    setGuideLoading(true);
+    setGuideError(null);
+    Promise.all([
+      fetchChapterGuide(chapterId),
+      fetchQuestions({ knowledgeId: chapterId }).catch(() => [] as Question[]),
+    ])
+      .then(([nextGuide, questions]) => {
+        if (!alive) return;
+        setGuide(nextGuide);
+        setSamples(questions.slice(0, 3));
+      })
+      .catch((requestError) => {
+        if (!alive) return;
+        setGuide(null);
+        setSamples([]);
+        setGuideError(agentErrorMessage(requestError));
+      })
+      .finally(() => {
+        if (alive) setGuideLoading(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [activeMaterial]);
+
   const syncQuery = (next: {
     subject?: SubjectFilter;
     chapter?: string;
@@ -117,6 +171,15 @@ export function MaterialsPage() {
   const practiceLink = chapter
     ? `/practice?knowledge=${encodeURIComponent(chapter)}`
     : "/practice";
+  const drawerPracticeLink = activeMaterial
+    ? `/practice?knowledge=${encodeURIComponent(
+        guide?.chapter_id || activeMaterial.chapter_id,
+      )}`
+    : practiceLink;
+  const kindTip =
+    guide?.kind_tips?.[activeMaterial?.kind || ""] ||
+    guide?.kind_tips?.textbook ||
+    "";
 
   return (
     <div className="page-stack">
@@ -125,11 +188,11 @@ export function MaterialsPage() {
           <p className="eyebrow">学习资料</p>
           <h1>学习资料</h1>
           <p className="page-intro__description">
-            按学科、资料类型与关键词浏览。只登记来源、页码和可信度，不转载教材正文。
+            知序导学 + 页码定位：点开卡片查看本章目标、知识点与样例题；教材正文请对照纸质书或课件原件。
           </p>
         </div>
         <Tag className="scope-tag" icon={<SafetyCertificateOutlined />}>
-          来源可追溯
+          导学自研 · 正文不转载
         </Tag>
       </section>
 
@@ -222,20 +285,17 @@ export function MaterialsPage() {
                 </div>
                 <h2>{material.title}</h2>
                 <p>
-                  {"summary" in material
-                    ? String(material.summary)
-                    : "已登记教材元数据与可定位页码。"}
+                  {material.summary ||
+                    "已登记出处与页码。点开查看知序章级导学。"}
                 </p>
                 <div className="material-card__tags">
                   <Tag color="blue">
                     {material.subject === "math" ? "高等数学" : "大学物理"}
                   </Tag>
                   <Tag>{material.chapter_id}</Tag>
-                  {"tags" in material
-                    ? (material.tags as string[]).slice(0, 2).map((tag) => (
-                        <Tag key={tag}>{tag}</Tag>
-                      ))
-                    : null}
+                  {(material.tags || []).slice(0, 2).map((tag) => (
+                    <Tag key={tag}>{tag}</Tag>
+                  ))}
                 </div>
                 <div className="material-card__meta">
                   <span>
@@ -243,13 +303,16 @@ export function MaterialsPage() {
                       ? `P.${material.page_range[0]}–${material.page_range[1]}`
                       : "元数据索引"}
                   </span>
-                  <span>
-                    {"credibility" in material
-                      ? String(material.credibility)
-                      : "已登记"}
-                  </span>
+                  <span>已登记</span>
                 </div>
                 <div className="material-card__actions">
+                  <Button
+                    size="small"
+                    type="link"
+                    onClick={() => setActiveMaterial(material)}
+                  >
+                    查看导学
+                  </Button>
                   <Link
                     to={`/practice?knowledge=${encodeURIComponent(material.chapter_id)}`}
                   >
@@ -271,13 +334,13 @@ export function MaterialsPage() {
       <Card className="source-note-card">
         <div>
           <p className="eyebrow">使用说明</p>
-          <h2>资料用来定位章节与页码。</h2>
+          <h2>导学讲「学什么」，页码帮你对照原件。</h2>
           <p>
-            这里登记教材、课件和作业的出处与页码，方便对照复习，不转载正文内容。
+            抽屉里的目标、易错与样例题由知序整理；教材/课件正文不在站内转载，请按页码翻原件。
           </p>
         </div>
         <Space wrap>
-          <Tag color="green">来源可追溯</Tag>
+          <Tag color="green">章级导学</Tag>
           <Tag color="blue">页码定位</Tag>
           <Link to={practiceLink}>
             <Button type="primary">
@@ -296,6 +359,133 @@ export function MaterialsPage() {
         to={practiceLink}
         icon={<FileTextOutlined />}
       />
+
+      <Drawer
+        className="material-guide-drawer"
+        title={
+          activeMaterial
+            ? `${materialKind[activeMaterial.kind] || activeMaterial.kind} · ${guide?.title || activeMaterial.title}`
+            : "章级导学"
+        }
+        placement="right"
+        width={480}
+        styles={{ wrapper: { maxWidth: "100vw" } }}
+        open={Boolean(activeMaterial)}
+        onClose={() => setActiveMaterial(null)}
+        destroyOnClose
+      >
+        {activeMaterial ? (
+          <Spin spinning={guideLoading}>
+            <div className="material-guide">
+              <section className="material-guide__block">
+                <p className="eyebrow">本条资料</p>
+                <h3>{activeMaterial.title}</h3>
+                <div className="material-guide__meta">
+                  <Tag>{materialKind[activeMaterial.kind] || activeMaterial.kind}</Tag>
+                  <Tag>{activeMaterial.chapter_id}</Tag>
+                  {activeMaterial.page_range ? (
+                    <Tag color="blue">
+                      P.{activeMaterial.page_range[0]}–{activeMaterial.page_range[1]}
+                    </Tag>
+                  ) : null}
+                  {guide?.exam_hot ? <Tag color="orange">期末热点</Tag> : null}
+                </div>
+                <p className="material-guide__note">
+                  {activeMaterial.license_note ||
+                    "对照纸质书或课件原件阅读正文；此处只提供导学与定位。"}
+                </p>
+              </section>
+
+              {guideError ? (
+                <Alert type="warning" showIcon message={guideError} />
+              ) : null}
+
+              {guide ? (
+                <>
+                  <section className="material-guide__block">
+                    <p className="eyebrow">本章学什么</p>
+                    <h3>{guide.title}</h3>
+                    <p>{guide.lead}</p>
+                    {guide.objectives.length ? (
+                      <ul className="material-guide__list">
+                        {guide.objectives.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </section>
+
+                  {guide.knowledge_points.length ? (
+                    <section className="material-guide__block">
+                      <p className="eyebrow">知识点</p>
+                      <div className="material-guide__kps">
+                        {guide.knowledge_points.map((kp) => (
+                          <Tag key={kp.id}>{kp.name}</Tag>
+                        ))}
+                      </div>
+                    </section>
+                  ) : null}
+
+                  {guide.pitfalls.length ? (
+                    <section className="material-guide__block">
+                      <p className="eyebrow">易错提醒</p>
+                      <ul className="material-guide__list material-guide__list--warn">
+                        {guide.pitfalls.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    </section>
+                  ) : null}
+
+                  {kindTip ? (
+                    <section className="material-guide__block">
+                      <p className="eyebrow">怎么用这份资料</p>
+                      <p>{kindTip}</p>
+                    </section>
+                  ) : null}
+                </>
+              ) : null}
+
+              <section className="material-guide__block">
+                <p className="eyebrow">样例题</p>
+                {samples.length ? (
+                  <Collapse
+                    ghost
+                    items={samples.map((question, index) => ({
+                      key: question.question_id,
+                      label: `第 ${index + 1} 题 · ${questionTypeLabel[question.type] || question.type}`,
+                      children: (
+                        <div className="material-guide__sample">
+                          <p>{question.stem}</p>
+                          <p className="material-guide__answer">
+                            参考答案（订正用）：{question.answer}
+                          </p>
+                          {question.exam_hot ? (
+                            <Tag color="orange">期末热点</Tag>
+                          ) : null}
+                        </div>
+                      ),
+                    }))}
+                  />
+                ) : (
+                  <p className="material-guide__muted">
+                    本章暂无入库样例题，可直接去做练习巩固。
+                  </p>
+                )}
+              </section>
+
+              <div className="material-guide__actions">
+                <Link to={drawerPracticeLink}>
+                  <Button type="primary" block>
+                    去做本章练习
+                    <ArrowRightOutlined />
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </Spin>
+        ) : null}
+      </Drawer>
     </div>
   );
 }

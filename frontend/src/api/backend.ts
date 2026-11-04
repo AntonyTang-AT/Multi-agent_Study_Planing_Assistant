@@ -8,6 +8,7 @@ import type {
   Attempt,
   AttemptRequest,
   BlackboardEntry,
+  ChapterGuide,
   Material,
   Plan,
   Question,
@@ -92,6 +93,36 @@ export interface QuestionQuery {
   knowledgeId?: string;
   scenarioTag?: string;
   examHot?: boolean;
+}
+
+export async function fetchChapterGuide(
+  chapterId: string,
+): Promise<ChapterGuide> {
+  const id = chapterId.trim();
+  if (appEnv.useMock) {
+    return {
+      chapter_id: id || "math.a1.ch02",
+      title: "极限（演示）",
+      lead: "演示模式下的章级导学摘要。",
+      objectives: ["理解极限直观含义", "会用基本运算法则"],
+      knowledge_points: [
+        { id: "math.a1.ch02.kp01", name: "数列的极限" },
+        { id: "math.a1.ch02.kp02", name: "函数的极限" },
+      ],
+      pitfalls: ["不要把极限当成直接代入"],
+      kind_tips: {
+        textbook: "按页码对照教材定义与例题。",
+        courseware: "用课件过概念后再练习。",
+        homework: "先独立完成再对答案。",
+      },
+      exam_hot: true,
+      resolved_from: id,
+    };
+  }
+  const response = await apiClient.get<ChapterGuide>(
+    `/api/chapter-guides/${encodeURIComponent(id)}`,
+  );
+  return response.data;
 }
 
 export async function fetchQuestions(
