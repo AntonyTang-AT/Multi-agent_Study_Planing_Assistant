@@ -1378,6 +1378,9 @@ p {
 }
 
 .material-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
   margin-top: 8px;
 }
 
@@ -1752,6 +1755,76 @@ p {
   border-top: 1px solid var(--line);
   color: var(--faint);
   font-size: 8px;
+}
+
+.material-guide-drawer .ant-drawer-body {
+  padding-top: 12px;
+}
+
+.material-guide {
+  display: grid;
+  gap: 18px;
+}
+
+.material-guide__block h3 {
+  margin: 4px 0 8px;
+  font-family: "STZhongsong", "Songti SC", serif;
+  font-size: 18px;
+  line-height: 1.4;
+}
+
+.material-guide__block p {
+  margin: 0;
+  color: var(--ink-soft, #3d4a42);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.material-guide__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0;
+}
+
+.material-guide__note,
+.material-guide__muted {
+  color: var(--muted) !important;
+  font-size: 12px !important;
+}
+
+.material-guide__list {
+  margin: 10px 0 0;
+  padding-left: 1.15em;
+  color: var(--ink-soft, #3d4a42);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.material-guide__list--warn li::marker {
+  color: #c45c26;
+}
+
+.material-guide__kps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.material-guide__sample p {
+  margin-bottom: 8px;
+}
+
+.material-guide__answer {
+  color: var(--muted) !important;
+  font-size: 12px !important;
+}
+
+.material-guide__actions {
+  position: sticky;
+  bottom: 0;
+  padding-top: 8px;
+  background: linear-gradient(180deg, transparent, var(--paper, #fff) 28%);
 }
 
 .source-note-card .ant-card-body {

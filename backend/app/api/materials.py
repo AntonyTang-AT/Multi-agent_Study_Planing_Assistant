@@ -86,3 +86,74 @@ def list_materials(
             or scenario_tag in (m.get("tags") or [])
         ]
     return items
+
+
+def _load_chapter_guides() -> dict[str, dict]:
+    path = resolve_data_root() / "guides" / "chapter_guides.json"
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError, TypeError):
+        return {}
+    items = data.get("items") if isinstance(data, dict) else None
+    if not isinstance(items, list):
+        return {}
+    out: dict[str, dict] = {}
+    for item in items:
+        if isinstance(item, dict) and item.get("chapter_id"):
+            out[str(item["chapter_id"])] = item
+    return out
+
+
+def _resolve_guide_chapter_id(chapter_id: str) -> str:
+    """细章直接用；Agent 粗 ID 落到首选细章。"""
+    raw = (chapter_id or "").strip()
+    if not raw:
+        return raw
+    if raw in _AGENT_CHAPTER_FALLBACK:
+        return _AGENT_CHAPTER_FALLBACK[raw]
+    # 知识点级 ID：math.a1.ch02.kp01 → math.a1.ch02
+    if raw.startswith("math.a1.ch") and raw.count(".") >= 3:
+        return ".".join(raw.split(".")[:3])
+    if raw.startswith("phy.") and raw.count(".") >= 2:
+        return ".".join(raw.split(".")[:2])
+    return raw
+
+
+def _fallback_guide(chapter_id: str) -> dict:
+    return {
+        "chapter_id": chapter_id,
+        "subject": "math" if chapter_id.startswith("math") else "physics",
+        "title": chapter_id,
+        "lead": "暂无完整导学，仍可按资料页码对照教材，并去做本章练习。",
+        "objectives": [],
+        "knowledge_points": [],
+        "pitfalls": [],
+        "kind_tips": {
+            "textbook": "按页码翻到对应教材章节对照阅读。",
+            "courseware": "用课件过概念后再回教材页码。",
+            "homework": "先独立完成习题，再对照答案订正。",
+        },
+        "exam_hot": False,
+        "resolved_from": chapter_id,
+    }
+
+
+@router.get("/api/chapter-guides/{chapter_id}")
+def get_chapter_guide(chapter_id: str) -> dict:
+    """章级导学（知序自写）。支持细章 ID 或 Agent 粗 ID。"""
+    resolved = _resolve_guide_chapter_id(chapter_id)
+    guides = _load_chapter_guides()
+    guide = guides.get(resolved)
+    if not guide:
+        # 粗 ID 展开后的 needles 里找第一份有导学的细章
+        for needle in _chapter_needles(chapter_id):
+            if needle in guides:
+                guide = guides[needle]
+                resolved = needle
+                break
+    if not guide:
+        return _fallback_guide(resolved or chapter_id)
+    payload = dict(guide)
+    payload["resolved_from"] = chapter_id
+    payload["chapter_id"] = resolved
+    return payload

@@ -65,6 +65,26 @@ export interface Material {
   license_note: string;
   status: string;
   note?: string | null;
+  summary?: string;
+  tags?: string[];
+}
+
+export interface ChapterGuideKnowledgePoint {
+  id: string;
+  name: string;
+}
+
+export interface ChapterGuide {
+  chapter_id: string;
+  subject?: Subject | string;
+  title: string;
+  lead: string;
+  objectives: string[];
+  knowledge_points: ChapterGuideKnowledgePoint[];
+  pitfalls: string[];
+  kind_tips: Record<string, string>;
+  exam_hot?: boolean;
+  resolved_from?: string;
 }
 
 export interface VerifyHint {
