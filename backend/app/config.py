@@ -24,6 +24,8 @@ class Settings(BaseSettings):
     ]
     jwt_secret: str = "zhixu-dev-jwt-secret-change-me"
     jwt_expire_days: int = 7
+    materials_root: Path = BACKEND_ROOT.parent / "source" / "_原始下载"
+    libreoffice_binary: str = "libreoffice"
 
 
 @lru_cache

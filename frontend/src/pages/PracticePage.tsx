@@ -1,3 +1,4 @@
+import { MathText } from "../components/MathText";
 import {
   BookOutlined,
   CheckCircleOutlined,
@@ -288,7 +289,7 @@ export function PracticePage() {
                   <strong>
                     {index + 1}. {item.chapter}
                   </strong>
-                  <span>{item.stem}</span>
+                  <span><MathText text={item.stem} /></span>
                   <div>
                     <Tag>{item.exam_hot ? "热点" : "基础"}</Tag>
                     <Tag>难度 {item.difficulty}</Tag>
@@ -314,7 +315,7 @@ export function PracticePage() {
           </div>
           <div className="question-card__body">
             <span className="eyebrow">题目</span>
-            <h2>{question.stem}</h2>
+            <h2><MathText text={question.stem} /></h2>
             {hasOptions ? (
               <Radio.Group
                 className="answer-grid"
@@ -324,7 +325,7 @@ export function PracticePage() {
                 {question.options.map((option) => (
                   <Radio value={option.label} key={option.key}>
                     <span className="answer-key">{option.key}</span>
-                    <span>{option.label}</span>
+                    <span><MathText text={option.label} /></span>
                   </Radio>
                 ))}
               </Radio.Group>
@@ -341,7 +342,7 @@ export function PracticePage() {
             {question.assumptions.length ? (
               <div className="assumption-row">
                 <span>作答提示</span>
-                <Tag bordered={false}>{question.assumptions.join("；")}</Tag>
+                <Tag bordered={false}><MathText text={question.assumptions.join("；")} /></Tag>
               </div>
             ) : null}
 

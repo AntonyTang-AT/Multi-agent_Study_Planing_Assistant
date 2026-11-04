@@ -3090,3 +3090,7 @@ p {
     grid-template-columns: 1fr;
   }
 }
+
+.math-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.math-text .katex-display { overflow-x: auto; overflow-y: hidden; max-width: 100%; }
+.math-text .katex { font-size: 1.05em; }
