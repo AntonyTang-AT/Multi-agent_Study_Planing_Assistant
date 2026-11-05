@@ -2772,7 +2772,8 @@ p {
   font-size: 13px;
 }
 
-.practice-bank__item span {
+.practice-bank__item > span {
+  min-width: 0;
   font-size: 12px;
   color: var(--muted);
   display: -webkit-box;
