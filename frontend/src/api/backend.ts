@@ -206,3 +206,9 @@ export async function postTimeJump(days = 2): Promise<void> {
   if (appEnv.useMock) return;
   await apiClient.post("/api/demo/time-jump", { days });
 }
+
+/** 恢复演示账号开场预设（计划/黑板/作答），不清空账号 */
+export async function resetDemoPreset(): Promise<void> {
+  if (appEnv.useMock) return;
+  await apiClient.post("/api/demo/reset");
+}

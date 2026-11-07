@@ -209,6 +209,7 @@ export function PlanPage() {
         status={planStatus}
         message={planMessage}
         loading={loading}
+        subject={setup.subject}
         onChange={setSelectedOption}
         onSubmit={arbitrate}
       />

@@ -1,0 +1,537 @@
+{
+  "version": "1.0",
+  "generated": "2026-11-07",
+  "scope": "第 1 学期两门课：高数 A1（8 章）+ 大物 A1（10 章），每章一份笔记",
+  "what_this_is": "教材与课件的**结构化整理**，不是原文转载。每份笔记按「本章地图 → 必背定义 → 核心公式 → 常考题型 → 易错点 → 自查清单」六段组织，内容依据教材章节与课件目录重写，标注教材页码与课件文件。",
+  "copyright": "按 data/README.md §五 口径：只存元数据、页码定位与自编整理稿，不转载教材/课件正文。原始 PDF/PPTX 留在 source/_原始下载/，不进交付包。",
+  "subjects": {
+    "math": {
+      "textbook": {
+        "title": "《大学数学 1》第三版",
+        "publisher": "高等教育出版社（湖南大学数学与计量经济学院组编）",
+        "file": "高数/00_教材/HNU大学数学1 第3版.pdf",
+        "text_layer": "有字体但无 ToUnicode，程序提取为乱码；目录与页码已人工核对进 outline"
+      },
+      "courseware": [
+        {
+          "file": "高数/01_课件/湖南大学《高等数学》课件（第1章）.pptx",
+          "pages": 233,
+          "chapters": [
+            "math.a1.ch01"
+          ],
+          "text_extracted_chars": 48185,
+          "text_layer": "pptx 文本层（公式为图片，提取后需重整）",
+          "note": "第二版第 1 章 集合与函数；文件内含第 2 章前段（数列极限）"
+        },
+        {
+          "file": "高数/01_课件/湖南大学《高等数学》课件（第2章）.pptx",
+          "pages": 82,
+          "chapters": [
+            "math.a1.ch02"
+          ],
+          "text_extracted_chars": 16055,
+          "text_layer": "pptx 文本层（公式为图片，提取后需重整）",
+          "note": "第二版第 2 章 函数的极限，§1–§7 全覆盖"
+        },
+        {
+          "file": "高数/01_课件/湖南大学《高等数学》课件（第3章）.pptx",
+          "pages": 51,
+          "chapters": [
+            "math.a1.ch03"
+          ],
+          "text_extracted_chars": 8574,
+          "text_layer": "pptx 文本层（公式为图片，提取后需重整）",
+          "note": "第二版第 3 章 函数的连续性"
+        },
+        {
+          "file": "高数/01_课件/湖南大学《高等数学》课件（第4章）.pptx",
+          "pages": 138,
+          "chapters": [
+            "math.a1.ch04"
+          ],
+          "text_extracted_chars": 24945,
+          "text_layer": "pptx 文本层（公式为图片，提取后需重整）",
+          "note": "第二版第 4 章 导数与微分，§1–§6"
+        },
+        {
+          "file": "高数/01_课件/湖南大学《高等数学》课件（第5章）.pptx",
+          "pages": 127,
+          "chapters": [
+            "math.a1.ch04"
+          ],
+          "text_extracted_chars": 26652,
+          "text_layer": "pptx 文本层（公式为图片，提取后需重整）",
+          "note": "第二版第 5 章 微分中值定理 → 第三版并入 ch04"
+        },
+        {
+          "file": "高数/01_课件/湖南大学《高等数学》课件（第6章）.pptx",
+          "pages": 171,
+          "chapters": [
+            "math.a1.ch06"
+          ],
+          "text_extracted_chars": 21054,
+          "text_layer": "pptx 文本层（公式为图片，提取后需重整）",
+          "note": "第二版第 6 章 函数的积分"
+        },
+        {
+          "file": "高数/01_课件/湖南大学《高等数学》课件（第7章）.pptx",
+          "pages": 101,
+          "chapters": [
+            "math.a1.ch07"
+          ],
+          "text_extracted_chars": 16101,
+          "text_layer": "pptx 文本层（公式为图片，提取后需重整）",
+          "note": "第二版第 7 章 定积分的应用"
+        },
+        {
+          "file": "高数/01_课件/湖南大学《高等数学》课件（第8章）.pptx",
+          "pages": 96,
+          "chapters": [],
+          "text_extracted_chars": 14479,
+          "text_layer": "pptx 文本层（公式为图片，提取后需重整）",
+          "note": "第二版第 8 章 无穷级数 → 下册内容，已移出范围，仅存档"
+        },
+        {
+          "file": "高数/01_课件/湖南大学《高等数学》课件（第9章）.pptx",
+          "pages": 112,
+          "chapters": [
+            "math.a1.ch08"
+          ],
+          "text_extracted_chars": 26353,
+          "text_layer": "pptx 文本层（公式为图片，提取后需重整）",
+          "note": "第二版第 9 章 常微分方程 = 第三版 ch08"
+        }
+      ],
+      "chapters": [
+        {
+          "chapter_id": "math.a1.ch01",
+          "name": "集合与函数",
+          "textbook_pages": [
+            1,
+            27
+          ],
+          "knowledge_points": 3,
+          "note_file": "math/ch01.md",
+          "note_chars": 3086,
+          "courseware": [
+            "湖南大学《高等数学》课件（第1章）.pptx"
+          ]
+        },
+        {
+          "chapter_id": "math.a1.ch02",
+          "name": "极限",
+          "textbook_pages": [
+            28,
+            74
+          ],
+          "knowledge_points": 7,
+          "note_file": "math/ch02.md",
+          "note_chars": 3568,
+          "courseware": [
+            "湖南大学《高等数学》课件（第2章）.pptx"
+          ]
+        },
+        {
+          "chapter_id": "math.a1.ch03",
+          "name": "函数的连续性",
+          "textbook_pages": [
+            75,
+            91
+          ],
+          "knowledge_points": 2,
+          "note_file": "math/ch03.md",
+          "note_chars": 2865,
+          "courseware": [
+            "湖南大学《高等数学》课件（第3章）.pptx"
+          ]
+        },
+        {
+          "chapter_id": "math.a1.ch04",
+          "name": "函数的导数和微分",
+          "textbook_pages": [
+            92,
+            150
+          ],
+          "knowledge_points": 6,
+          "note_file": "math/ch04.md",
+          "note_chars": 4304,
+          "courseware": [
+            "湖南大学《高等数学》课件（第4章）.pptx",
+            "湖南大学《高等数学》课件（第5章）.pptx"
+          ]
+        },
+        {
+          "chapter_id": "math.a1.ch05",
+          "name": "导数与微分的应用举例",
+          "textbook_pages": [
+            151,
+            183
+          ],
+          "knowledge_points": 5,
+          "note_file": "math/ch05.md",
+          "note_chars": 3127,
+          "courseware": []
+        },
+        {
+          "chapter_id": "math.a1.ch06",
+          "name": "函数的积分",
+          "textbook_pages": [
+            184,
+            249
+          ],
+          "knowledge_points": 5,
+          "note_file": "math/ch06.md",
+          "note_chars": 3769,
+          "courseware": [
+            "湖南大学《高等数学》课件（第6章）.pptx"
+          ]
+        },
+        {
+          "chapter_id": "math.a1.ch07",
+          "name": "定积分的应用举例",
+          "textbook_pages": [
+            250,
+            276
+          ],
+          "knowledge_points": 5,
+          "note_file": "math/ch07.md",
+          "note_chars": 2713,
+          "courseware": [
+            "湖南大学《高等数学》课件（第7章）.pptx"
+          ]
+        },
+        {
+          "chapter_id": "math.a1.ch08",
+          "name": "常微分方程",
+          "textbook_pages": [
+            277,
+            327
+          ],
+          "knowledge_points": 7,
+          "note_file": "math/ch08.md",
+          "note_chars": 3676,
+          "courseware": [
+            "湖南大学《高等数学》课件（第9章）.pptx"
+          ]
+        }
+      ]
+    },
+    "physics": {
+      "textbook": {
+        "title": "《大学物理学（Ⅰ）》",
+        "publisher": "北京大学出版社，2019.1",
+        "file": "大物/01_教材/大物1新版教材.pdf",
+        "text_layer": "有字体但无 ToUnicode，程序提取为乱码；章节目录已人工核对进 outline"
+      },
+      "courseware": [
+        {
+          "file": "大物/02_课件/运动学.pdf",
+          "pages": 60,
+          "chapters": [
+            "phy.kinematics"
+          ],
+          "text_extracted_chars": 0,
+          "text_layer": "纯图片（每页一张 JPEG，无文字层），无法程序提取",
+          "note": "第 1 章 质点运动学（含导论页）"
+        },
+        {
+          "file": "大物/02_课件/质点力学.pdf",
+          "pages": 32,
+          "chapters": [
+            "phy.dynamics"
+          ],
+          "text_extracted_chars": 0,
+          "text_layer": "纯图片（每页一张 JPEG，无文字层），无法程序提取",
+          "note": "第 2 章 牛顿定律与动力学两类问题"
+        },
+        {
+          "file": "大物/02_课件/动量.pdf",
+          "pages": 24,
+          "chapters": [
+            "phy.dynamics"
+          ],
+          "text_extracted_chars": 0,
+          "text_layer": "纯图片（每页一张 JPEG，无文字层），无法程序提取",
+          "note": "第 2 章 动量定理与动量守恒"
+        },
+        {
+          "file": "大物/02_课件/功与机械能.pdf",
+          "pages": 23,
+          "chapters": [
+            "phy.dynamics"
+          ],
+          "text_extracted_chars": 0,
+          "text_layer": "纯图片（每页一张 JPEG，无文字层），无法程序提取",
+          "note": "第 2 章 功、能、机械能守恒"
+        },
+        {
+          "file": "大物/02_课件/角动量.pdf",
+          "pages": 12,
+          "chapters": [
+            "phy.dynamics"
+          ],
+          "text_extracted_chars": 0,
+          "text_layer": "纯图片（每页一张 JPEG，无文字层），无法程序提取",
+          "note": "第 2 章 角动量与角动量守恒"
+        },
+        {
+          "file": "大物/02_课件/刚体.pdf",
+          "pages": 40,
+          "chapters": [
+            "phy.rigid"
+          ],
+          "text_extracted_chars": 0,
+          "text_layer": "纯图片（每页一张 JPEG，无文字层），无法程序提取",
+          "note": "第 3 章 刚体定轴转动"
+        },
+        {
+          "file": "大物/02_课件/振动.pdf",
+          "pages": 47,
+          "chapters": [
+            "phy.vibration"
+          ],
+          "text_extracted_chars": 0,
+          "text_layer": "纯图片（每页一张 JPEG，无文字层），无法程序提取",
+          "note": "第 4 章 振动"
+        },
+        {
+          "file": "大物/02_课件/波动.pdf",
+          "pages": 78,
+          "chapters": [
+            "phy.wave"
+          ],
+          "text_extracted_chars": 0,
+          "text_layer": "纯图片（每页一张 JPEG，无文字层），无法程序提取",
+          "note": "第 5 章 波动"
+        },
+        {
+          "file": "大物/02_课件/光的干涉.pdf",
+          "pages": 69,
+          "chapters": [
+            "phy.interference"
+          ],
+          "text_extracted_chars": 0,
+          "text_layer": "纯图片（每页一张 JPEG，无文字层），无法程序提取",
+          "note": "第 6 章 光的干涉（新版，69 页）"
+        },
+        {
+          "file": "大物/02_课件/干涉.pdf",
+          "pages": 27,
+          "chapters": [
+            "phy.interference"
+          ],
+          "text_extracted_chars": 0,
+          "text_layer": "纯图片（每页一张 JPEG，无文字层），无法程序提取",
+          "note": "第 6 章 光的干涉（旧版，27 页，内容较少，保留备查）"
+        },
+        {
+          "file": "大物/02_课件/光的衍射.pdf",
+          "pages": 63,
+          "chapters": [
+            "phy.diffraction"
+          ],
+          "text_extracted_chars": 0,
+          "text_layer": "纯图片（每页一张 JPEG，无文字层），无法程序提取",
+          "note": "第 7 章 光的衍射（新版，63 页）"
+        },
+        {
+          "file": "大物/02_课件/衍射.pdf",
+          "pages": 33,
+          "chapters": [
+            "phy.diffraction"
+          ],
+          "text_extracted_chars": 0,
+          "text_layer": "纯图片（每页一张 JPEG，无文字层），无法程序提取",
+          "note": "第 7 章 光的衍射（旧版，33 页，内容较少，保留备查）"
+        },
+        {
+          "file": "大物/02_课件/光的偏振.pdf",
+          "pages": 59,
+          "chapters": [
+            "phy.polarization"
+          ],
+          "text_extracted_chars": 0,
+          "text_layer": "纯图片（每页一张 JPEG，无文字层），无法程序提取",
+          "note": "第 8 章 光的偏振"
+        },
+        {
+          "file": "大物/02_课件/微观热学.pdf",
+          "pages": 37,
+          "chapters": [
+            "phy.kinetic"
+          ],
+          "text_extracted_chars": 0,
+          "text_layer": "纯图片（每页一张 JPEG，无文字层），无法程序提取",
+          "note": "第 9 章 气体分子运动论"
+        },
+        {
+          "file": "大物/02_课件/宏观热学.pdf",
+          "pages": 62,
+          "chapters": [
+            "phy.thermo"
+          ],
+          "text_extracted_chars": 0,
+          "text_layer": "纯图片（每页一张 JPEG，无文字层），无法程序提取",
+          "note": "第 10 章 热力学基本原理"
+        }
+      ],
+      "chapters": [
+        {
+          "chapter_id": "phy.kinematics",
+          "name": "质点运动学",
+          "hours": {
+            "lecture": 4,
+            "discussion": 2,
+            "total": 6
+          },
+          "knowledge_points": 4,
+          "note_file": "physics/ch01.md",
+          "note_chars": 3082,
+          "courseware": [
+            "运动学.pdf"
+          ]
+        },
+        {
+          "chapter_id": "phy.dynamics",
+          "name": "质点力学的基本规律 守恒定律",
+          "hours": {
+            "lecture": 6,
+            "discussion": 2,
+            "total": 8
+          },
+          "knowledge_points": 5,
+          "note_file": "physics/ch02.md",
+          "note_chars": 3161,
+          "courseware": [
+            "质点力学.pdf",
+            "动量.pdf",
+            "功与机械能.pdf",
+            "角动量.pdf"
+          ]
+        },
+        {
+          "chapter_id": "phy.rigid",
+          "name": "刚体的定轴转动",
+          "hours": {
+            "lecture": 4,
+            "discussion": 2,
+            "total": 6
+          },
+          "knowledge_points": 3,
+          "note_file": "physics/ch03.md",
+          "note_chars": 2691,
+          "courseware": [
+            "刚体.pdf"
+          ]
+        },
+        {
+          "chapter_id": "phy.vibration",
+          "name": "振动",
+          "hours": {
+            "lecture": 4,
+            "discussion": 1,
+            "total": 5
+          },
+          "knowledge_points": 4,
+          "note_file": "physics/ch04.md",
+          "note_chars": 2928,
+          "courseware": [
+            "振动.pdf"
+          ]
+        },
+        {
+          "chapter_id": "phy.wave",
+          "name": "波动",
+          "hours": {
+            "lecture": 7,
+            "discussion": 2,
+            "total": 9
+          },
+          "knowledge_points": 5,
+          "note_file": "physics/ch05.md",
+          "note_chars": 3421,
+          "courseware": [
+            "波动.pdf"
+          ]
+        },
+        {
+          "chapter_id": "phy.interference",
+          "name": "光的干涉",
+          "hours": {
+            "lecture": 4,
+            "discussion": 1,
+            "total": 5
+          },
+          "knowledge_points": 3,
+          "note_file": "physics/ch06.md",
+          "note_chars": 2703,
+          "courseware": [
+            "光的干涉.pdf",
+            "干涉.pdf"
+          ]
+        },
+        {
+          "chapter_id": "phy.diffraction",
+          "name": "光的衍射",
+          "hours": {
+            "lecture": 6,
+            "discussion": 2,
+            "total": 8
+          },
+          "knowledge_points": 3,
+          "note_file": "physics/ch07.md",
+          "note_chars": 2675,
+          "courseware": [
+            "光的衍射.pdf",
+            "衍射.pdf"
+          ]
+        },
+        {
+          "chapter_id": "phy.polarization",
+          "name": "光的偏振",
+          "hours": {
+            "lecture": 2,
+            "discussion": 1,
+            "total": 3
+          },
+          "knowledge_points": 3,
+          "note_file": "physics/ch08.md",
+          "note_chars": 2064,
+          "courseware": [
+            "光的偏振.pdf"
+          ]
+        },
+        {
+          "chapter_id": "phy.kinetic",
+          "name": "气体分子运动论",
+          "hours": {
+            "lecture": 5,
+            "discussion": 1,
+            "total": 6
+          },
+          "knowledge_points": 4,
+          "note_file": "physics/ch09.md",
+          "note_chars": 2876,
+          "courseware": [
+            "微观热学.pdf"
+          ]
+        },
+        {
+          "chapter_id": "phy.thermo",
+          "name": "热力学基本原理",
+          "hours": {
+            "lecture": 6,
+            "discussion": 2,
+            "total": 8
+          },
+          "knowledge_points": 4,
+          "note_file": "physics/ch10.md",
+          "note_chars": 3484,
+          "courseware": [
+            "宏观热学.pdf"
+          ]
+        }
+      ]
+    }
+  }
+}

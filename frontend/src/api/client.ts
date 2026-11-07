@@ -41,6 +41,11 @@ apiClient.interceptors.response.use(
       }
     }
 
+    // blob 响应的 data 不是 JSON，不能直接读 .message，否则会弹出无意义/卡顿提示
+    if (error.config?.responseType === "blob") {
+      return Promise.reject(error);
+    }
+
     const payload = error.response?.data;
     const fallback =
       error.code === "ECONNABORTED"

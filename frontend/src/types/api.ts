@@ -7,7 +7,7 @@
  */
 
 export type Scenario = "final_review" | "catch_up";
-export type Subject = "math" | "physics";
+export type Subject = "math" | "physics" | "cs";
 
 export type AgentIntent =
   | "create_plan"
@@ -62,6 +62,7 @@ export interface Material {
   file?: string;
   available?: boolean;
   preview_available?: boolean;
+  size_bytes?: number;
   page_range?: [number, number] | null;
   page_status?: string;
   license_note: string;

@@ -4,9 +4,9 @@
 
     python -m scripts.seed_demo_accounts
 
-- 3 名重点学生（math / phys / catch）：完整计划、作答、黑板与对话画像
+- 4 名重点学生（math / phys / catch / cs）：完整计划、作答、黑板与对话画像
 - 47 名班级同学（s01–s47）：计划 / 作答 / 少量提醒，供管理端统计
-- 合计 50 名学生；班级同学不编造对话内容
+- 合计 51 名学生；班级同学不编造对话内容
 """
 
 from __future__ import annotations
@@ -52,6 +52,13 @@ ACCOUNTS = [
         "password": DEMO_PASSWORD,
     },
     {
+        "id": "u_student_cs",
+        "username": "cs",
+        "display_name": "江予澈",
+        "role": "student",
+        "password": DEMO_PASSWORD,
+    },
+    {
         "id": "u_admin",
         "username": "admin",
         "display_name": "教学管理",
@@ -64,6 +71,12 @@ MATH_OPTIONS = [
     {"id": "extend_time", "label": "每天多挤出 20 分钟"},
     {"id": "reduce_depth", "label": "证明改成例题精读，先保过线"},
     {"id": "adjust_goal", "label": "连续性章节挪到周末集中看"},
+]
+
+CS_OPTIONS = [
+    {"id": "extend_time", "label": "每天多挤出一点时间"},
+    {"id": "reduce_depth", "label": "先降低今晚任务难度"},
+    {"id": "adjust_goal", "label": "把难点挪到周末"},
 ]
 
 
@@ -129,6 +142,13 @@ def _upsert_bb(db, entry_id: str, fields: dict) -> None:
             setattr(bb, key, value)
 
 
+def _reset_user_learning_state(db, user_id: str) -> None:
+    """清掉该账号演示过程中产生的脏黑板 / 额外作答，再由 seed 写回基线。"""
+    db.execute(delete(BlackboardEntry).where(BlackboardEntry.user_id == user_id))
+    db.execute(delete(Attempt).where(Attempt.user_id == user_id))
+    db.execute(delete(AiCallLog).where(AiCallLog.user_id == user_id))
+
+
 def _replace_attempts(db, user_id: str, rows: list[dict]) -> None:
     db.execute(delete(Attempt).where(Attempt.user_id == user_id))
     for row in rows:
@@ -161,6 +181,7 @@ def _ensure_ai_log(
 
 def _seed_math_conflict(db, user_id: str) -> None:
     """林清夏：高数期末冲刺，今晚计划超时需调整。"""
+    _reset_user_learning_state(db, user_id)
     plan = {
         "scenario": "final_review",
         "goal": "11 月 22 日高数期末过线，先打通极限与连续",
@@ -322,7 +343,14 @@ def _seed_math_conflict(db, user_id: str) -> None:
             "summary": "今晚「连续性证明」约需 60 分钟，超过你设定的每日 45 分钟",
             "severity": "high",
             "evidence_refs": json.dumps(
-                ["学习计划 · 第 3 天", "每日可用时间 ≤ 45 分钟", "昨晚练习已用 40 分钟"],
+                [
+                    "传话 · 程计：第 3 天「连续性证明」估时 60 分钟，已经顶破每日 45 分钟预算。",
+                    "传话 · 安节：别直接砍整晚任务，给三个选项——压缩证明 / 顺延一天 / 临时加时。",
+                    "传话 · 析因：记下这次拍板，下周排期避开同类塞车。",
+                    "依据 · 第 3 天「连续性证明」约 60 分钟",
+                    "约束 · 每日可用时间 ≤ 45 分钟",
+                    "建议动作 · 打开学习计划，选择压缩证明或顺延",
+                ],
                 ensure_ascii=False,
             ),
             "status": "open",
@@ -338,12 +366,97 @@ def _seed_math_conflict(db, user_id: str) -> None:
             "summary": "极限计算部分可暂视为过线水平，下一周重点应放在证明书写",
             "severity": "low",
             "evidence_refs": json.dumps(
-                ["近 5 次极限题正确率 80%", "证明题仍有 2 次中途放弃"],
+                [
+                    "传话 · 析因：近 5 次极限题正确率约 80%，可视为过线。",
+                    "传话 · 程计：那下周排期把力气挪到证明书写。",
+                    "依据 · 近 5 次极限题正确率约 80%",
+                    "依据 · 证明题仍有 2 次中途放弃",
+                    "建议动作 · 去学习轨迹确认强弱项",
+                ],
                 ensure_ascii=False,
             ),
             "status": "resolved",
             "resolution": json.dumps(
                 {"action": "keep_focus", "note": "已将证明题排到第 3、5 天"},
+                ensure_ascii=False,
+            ),
+        },
+    )
+    # 历史协作：已处理的多轮传话，展示「不是只有当前待办」
+    _upsert_bb(
+        db,
+        "bb_seed_math_hist_plan",
+        {
+            "user_id": user_id,
+            "type": "hypothesis",
+            "summary": "（历史）上周：先把夹逼题正确率拉到 70%，再碰连续性证明",
+            "severity": "low",
+            "evidence_refs": json.dumps(
+                [
+                    "传话 · 析因：夹逼近 3 次正确率只有 45%，证明再堆只会更慌。",
+                    "传话 · 程计：那本周任务改成「夹逼热身 ×3 + 证明草稿 ×1」。",
+                    "传话 · 温题：我准备两道夹逼变式，做完打卡即可。",
+                    "传话 · 安节：每天上限仍 45 分钟，证明草稿只留 15 分钟。",
+                    "依据 · 上周夹逼正确率 45%",
+                    "建议动作 · 已确认并写入计划",
+                ],
+                ensure_ascii=False,
+            ),
+            "status": "resolved",
+            "resolution": json.dumps(
+                {"action": "ack", "note": "已按假设调整上周计划"},
+                ensure_ascii=False,
+            ),
+        },
+    )
+    _upsert_bb(
+        db,
+        "bb_seed_math_hist_verify",
+        {
+            "user_id": user_id,
+            "type": "challenge",
+            "summary": "（历史）洛必达连用三次被校验拦下：未核对条件",
+            "severity": "medium",
+            "evidence_refs": json.dumps(
+                [
+                    "传话 · 温题：草稿直接洛必达三次，条件写糊了，先别提交。",
+                    "传话 · 析因：这是「公式误用」标签第二次出现。",
+                    "传话 · 程计：把「洛必达条件检查」加进明日热身清单。",
+                    "传话 · 安节：今天只订正这一题就收工，别再开新证明。",
+                    "依据 · verify#failed · 洛必达条件缺失",
+                    "建议动作 · 已订正并标记了解",
+                ],
+                ensure_ascii=False,
+            ),
+            "status": "resolved",
+            "resolution": json.dumps(
+                {"action": "ack", "note": "已补条件后重交"},
+                ensure_ascii=False,
+            ),
+        },
+    )
+    _upsert_bb(
+        db,
+        "bb_seed_math_hist_pace",
+        {
+            "user_id": user_id,
+            "type": "intervention",
+            "summary": "（历史）期中后曾连续 3 天未练，助手们缩短了任务颗粒",
+            "severity": "medium",
+            "evidence_refs": json.dumps(
+                [
+                    "传话 · 安节：检测到 72 小时空白，先别用原计划硬扛。",
+                    "传话 · 程计：今日只保留 15 分钟极限填空。",
+                    "传话 · 温题：热身题已就绪，完成即可恢复节奏。",
+                    "传话 · 析因：空白后第一天正确率通常偏低，不记入强弱项。",
+                    "依据 · demo#time_jump",
+                    "建议动作 · 已完成短热身",
+                ],
+                ensure_ascii=False,
+            ),
+            "status": "resolved",
+            "resolution": json.dumps(
+                {"action": "ack", "note": "已用短任务重启"},
                 ensure_ascii=False,
             ),
         },
@@ -417,6 +530,7 @@ def _seed_math_conflict(db, user_id: str) -> None:
 
 def _seed_physics_ok(db, user_id: str) -> None:
     """周予安：大物力学跟课，受力图漏了摩擦。"""
+    _reset_user_learning_state(db, user_id)
     plan = {
         "scenario": "catch_up",
         "goal": "两周内跟上力学进度，受力分析不再丢条件",
@@ -569,7 +683,14 @@ def _seed_physics_ok(db, user_id: str) -> None:
             "summary": "斜面题草稿默认「光滑」，但题干写了摩擦系数 μ=0.2",
             "severity": "medium",
             "evidence_refs": json.dumps(
-                ["作答 · 粗糙斜面上滑块的加速度", "题干条件 · μ=0.2", "你的草稿未出现 f=μN"],
+                [
+                    "传话 · 温题：题干写了 μ=0.2，草稿却按光滑面算，先拦住提交。",
+                    "传话 · 析因：近两次错题都和摩擦假设有关，值得钉在黑板上。",
+                    "传话 · 安节：提醒语气放软——指出缺摩擦力，再送回练习页。",
+                    "依据 · 题干写明 μ=0.2",
+                    "依据 · 草稿按光滑面计算",
+                    "建议动作 · 回练习页补全摩擦力后再提交",
+                ],
                 ensure_ascii=False,
             ),
             "status": "open",
@@ -585,11 +706,68 @@ def _seed_physics_ok(db, user_id: str) -> None:
             "summary": "若先强制写出「接触面是否光滑」再列方程，漏力概率会下降",
             "severity": "low",
             "evidence_refs": json.dumps(
-                ["近 2 次错题均与摩擦假设有关"],
+                [
+                    "传话 · 析因：提出可验证假设——先写「光滑？/有摩擦？」再列式。",
+                    "传话 · 温题：下次同类题我会按这条先检查再提示。",
+                    "依据 · 近 2 次错题都与摩擦假设有关",
+                    "建议动作 · 下次先在草稿纸写「光滑？/有摩擦？」再列式",
+                ],
                 ensure_ascii=False,
             ),
             "status": "open",
             "resolution": None,
+        },
+    )
+    _upsert_bb(
+        db,
+        "bb_seed_physics_hist_force",
+        {
+            "user_id": user_id,
+            "type": "challenge",
+            "summary": "（历史）受力分析漏画支持力，助手拦下并补受力清单",
+            "severity": "medium",
+            "evidence_refs": json.dumps(
+                [
+                    "传话 · 温题：草稿只有重力与拉力，缺支持力，先别交。",
+                    "传话 · 析因：受力漏项是上周错因第一名。",
+                    "传话 · 程计：明日热身改成「先列力再写方程」模板题。",
+                    "传话 · 安节：订正这题就够，别连做三道难题。",
+                    "依据 · 受力分析缺支持力",
+                    "建议动作 · 已补全后提交",
+                ],
+                ensure_ascii=False,
+            ),
+            "status": "resolved",
+            "resolution": json.dumps(
+                {"action": "ack", "note": "已按清单订正"},
+                ensure_ascii=False,
+            ),
+        },
+    )
+    _upsert_bb(
+        db,
+        "bb_seed_physics_hist_plan",
+        {
+            "user_id": user_id,
+            "type": "conflict",
+            "summary": "（历史）曾把动能定理与摩擦长题排进同一晚，超时后改期",
+            "severity": "high",
+            "evidence_refs": json.dumps(
+                [
+                    "传话 · 程计：今晚两道长题合计 70 分钟，超过每日 50 分钟。",
+                    "传话 · 安节：建议保留动能定理，摩擦题顺延。",
+                    "传话 · 温题：那我把摩擦题移到练习中心「明日待做」。",
+                    "传话 · 析因：连续超时会降低完成率，记一笔。",
+                    "依据 · plan#overload",
+                    "建议动作 · 已选择顺延",
+                ],
+                ensure_ascii=False,
+            ),
+            "status": "resolved",
+            "resolution": json.dumps(
+                {"action": "defer", "note": "摩擦题顺延一天"},
+                ensure_ascii=False,
+            ),
         },
     )
     now = datetime.now(timezone.utc)
@@ -671,6 +849,7 @@ def _seed_physics_ok(db, user_id: str) -> None:
 
 def _seed_catchup_intervention(db, user_id: str) -> None:
     """陈可：连续两天没练，需要低门槛恢复。"""
+    _reset_user_learning_state(db, user_id)
     plan = {
         "scenario": "catch_up",
         "goal": "先恢复每日学习节奏，再逐步回到极限专题",
@@ -792,11 +971,70 @@ def _seed_catchup_intervention(db, user_id: str) -> None:
             "summary": "已连续 2 天没有练习，建议先完成 15 分钟热身再决定是否加练",
             "severity": "medium",
             "evidence_refs": json.dumps(
-                ["最近练习间隔 48 小时+", "上次停留在夹逼例题第 2 步", "今日计划已缩短为两段"],
+                [
+                    "传话 · 安节：已经超过 48 小时没有练习信号，需要短任务把节奏拉回来。",
+                    "传话 · 程计：今日目标收成 15 分钟热身，完成即可打卡。",
+                    "传话 · 温题：热身题准备好了，点开始就能做。",
+                    "依据 · 最近练习间隔超过 48 小时",
+                    "依据 · 上次停在夹逼例题第 2 步",
+                    "建议动作 · 先做 15 分钟热身，完成即可打卡",
+                ],
                 ensure_ascii=False,
             ),
             "status": "open",
             "resolution": None,
+        },
+    )
+    _upsert_bb(
+        db,
+        "bb_seed_catchup_hist_restart",
+        {
+            "user_id": user_id,
+            "type": "stage_conclusion",
+            "summary": "（历史）上一次断档后：用 3 天短热身把登录节奏拉回来了",
+            "severity": "low",
+            "evidence_refs": json.dumps(
+                [
+                    "传话 · 安节：连续缺勤后不要用原计划硬顶，先保证「每天打开」。",
+                    "传话 · 程计：三天都只排 15 分钟极限填空。",
+                    "传话 · 温题：热身通过即可打卡，不计入强弱项压力。",
+                    "传话 · 析因：节奏恢复后，再评估是否加回夹逼专题。",
+                    "依据 · 三日连续打卡",
+                    "建议动作 · 已确认可逐步加量",
+                ],
+                ensure_ascii=False,
+            ),
+            "status": "resolved",
+            "resolution": json.dumps(
+                {"action": "ack", "note": "短热身策略有效"},
+                ensure_ascii=False,
+            ),
+        },
+    )
+    _upsert_bb(
+        db,
+        "bb_seed_catchup_hist_challenge",
+        {
+            "user_id": user_id,
+            "type": "challenge",
+            "summary": "（历史）夹逼草稿只写了一边不等式，被助教拦住补全",
+            "severity": "medium",
+            "evidence_refs": json.dumps(
+                [
+                    "传话 · 温题：夹逼必须上下两界同时成立，草稿缺上界。",
+                    "传话 · 析因：这和「中途离开」叠在一起，完成率会更差。",
+                    "传话 · 安节：今天只订正这一题，别开新专题。",
+                    "传话 · 程计：订正完成后才解锁明日热身。",
+                    "依据 · 夹逼缺一侧放缩",
+                    "建议动作 · 已补全后提交",
+                ],
+                ensure_ascii=False,
+            ),
+            "status": "resolved",
+            "resolution": json.dumps(
+                {"action": "ack", "note": "已补两边放缩"},
+                ensure_ascii=False,
+            ),
         },
     )
     now = datetime.now(timezone.utc)
@@ -834,6 +1072,16 @@ def _seed_catchup_intervention(db, user_id: str) -> None:
                 "duration_ms": 9000,
                 "created_at": now - timedelta(days=5),
             },
+            {
+                "id": "att_catch_004",
+                "user_id": user_id,
+                "question_id": "math_catch_0001",
+                "answer": "按定义说明左右极限都存在且相等",
+                "is_correct": True,
+                "error_tag": None,
+                "duration_ms": 12000,
+                "created_at": now - timedelta(days=1, hours=2),
+            },
         ],
     )
     _ensure_ai_log(
@@ -846,9 +1094,14 @@ def _seed_catchup_intervention(db, user_id: str) -> None:
     )
 
 
-FOCUS_USERNAMES = {"math", "phys", "catch"}
-FOCUS_IDS = {"u_student_math", "u_student_physics", "u_student_catchup"}
-COHORT_COUNT = 47  # 3 重点 + 47 班级同学 = 50
+FOCUS_USERNAMES = {"math", "phys", "catch", "cs"}
+FOCUS_IDS = {
+    "u_student_math",
+    "u_student_physics",
+    "u_student_catchup",
+    "u_student_cs",
+}
+COHORT_COUNT = 47  # 4 重点 + 47 班级同学 = 51
 COHORT_PASSWORD = "cohort"
 
 _SURNAMES = list("赵钱孙李周吴郑王冯陈褚卫蒋沈韩杨朱秦尤许何吕施张孔曹严华金魏陶姜")
@@ -911,7 +1164,7 @@ def _cohort_name(index: int) -> str:
 
 
 def _cleanup_non_roster_students(db) -> None:
-    """只保留 3 名重点 + 47 名班级同学 + admin；清掉旧的统计填充账号。"""
+    """只保留重点账号 + 47 名班级同学 + admin；清掉旧的统计填充账号。"""
     keep_ids = set(FOCUS_IDS) | {f"u_cohort_{i:02d}" for i in range(1, COHORT_COUNT + 1)} | {
         "u_admin"
     }
@@ -1096,6 +1349,283 @@ def _seed_cohort_students(db) -> int:
     return created
 
 
+def _seed_cs_python(db, user_id: str) -> None:
+    """江予澈：计概 Python —— 今晚任务超时需确认 + 沙箱练习画像。"""
+    _reset_user_learning_state(db, user_id)
+    plan = {
+        "scenario": "catch_up",
+        "goal": "两周内打通 Python 基础与算法入门，能独立完成洛谷入门题",
+        "daily_minutes_budget": 50,
+        "days_left": 14,
+        "tasks": [
+            _task(
+                1,
+                "练习",
+                "变量与字符串沙箱题",
+                25,
+                "完成练习台「拼接问候语」「交换变量」并自测通过",
+                "low",
+                "cs.py.basics",
+                "cs",
+                status="done",
+            ),
+            _task(
+                2,
+                "练习",
+                "分支与循环沙箱 + 洛谷入门连刷",
+                70,
+                "沙箱自测通过，并至少提交 2 道洛谷分支循环题",
+                "high",
+                "cs.py.control",
+                "cs",
+                error_tag="off_by_one",
+                status="blocked",
+            ),
+            _task(
+                3,
+                "练习",
+                "列表与字典 · 力扣两数之和热身",
+                45,
+                "完成列表求和沙箱，并打开力扣 1 题阅读题面",
+                "medium",
+                "cs.py.structures",
+                "cs",
+            ),
+            _task(
+                4,
+                "整理",
+                "函数封装与边界条件笔记",
+                30,
+                "写清 larger/fact 的边界用例各 2 个",
+                "low",
+                "cs.py.functions",
+                "cs",
+            ),
+            _task(
+                5,
+                "模拟",
+                "算法思维：递推小测",
+                35,
+                "阶乘沙箱通过 + 斐波那契题面走读",
+                "high",
+                "cs.py.algorithm",
+                "cs",
+            ),
+        ],
+        "_demo": {
+            "plan_status": "conflict",
+            "plan_message": "今晚只剩 50 分钟，但「分支与循环沙箱 + 洛谷入门连刷」约需 70 分钟，需要先决定怎么改今晚安排。",
+            "user_options": CS_OPTIONS,
+            "selected_option_id": "reduce_depth",
+            "show_intervention": False,
+            "setup": {
+                "mode": "catch_up",
+                "subject": "cs",
+                "dailyMinutes": 50,
+                "examDate": "2026-12-10",
+                "chapter": "计概 · Python 基础与算法入门",
+            },
+            "persona": {
+                "real_name": "江予澈",
+                "major": "人工智能 · 2025 级",
+                "course": "计算与人工智能概论（Python）",
+                "semester": "大一上 · 计概同步练习",
+                "focus": "语法能写，但报错读不懂；今晚任务又排超了",
+                "weak_points": [
+                    "IndentationError / NameError 看到就慌",
+                    "循环边界 off-by-one",
+                    "不会把沙箱题迁移到洛谷输入输出格式",
+                ],
+                "next_action": "先确认今晚怎么安排，再去沙箱过分支循环自测",
+                "next_path": "/plan",
+                "chat_greeting": "予澈你好。今晚「分支循环 + 洛谷连刷」看起来会超出你设定的 50 分钟。要不要先一起看看怎么改今晚的安排？",
+                "quick_asks": [
+                    "今晚时间不够怎么办",
+                    "这段报错什么意思",
+                    "沙箱和洛谷有啥区别",
+                    "给我一个提示",
+                ],
+                "recent_days": [
+                    {"when": "前天 21:10", "text": "变量题自测通过"},
+                    {"when": "昨天 20:40", "text": "循环题 IndentationError 卡住 12 分钟"},
+                    {"when": "今天 16:05", "text": "准备练分支，计划里又叠了两道洛谷"},
+                ],
+                "mastery": [
+                    {"label": "变量字符串", "value": 78},
+                    {"label": "分支循环", "value": 46},
+                    {"label": "列表字典", "value": 38},
+                    {"label": "函数", "value": 35},
+                    {"label": "算法入门", "value": 28},
+                ],
+                "question_notes": [
+                    {"question_id": "cs_local_two_sum", "title": "两数之和下标"},
+                    {"question_id": "cs_local_jump_game", "title": "跳跃游戏"},
+                    {"question_id": "cs_local_coin", "title": "零钱兑换"},
+                    {"question_id": "ext_leetcode_322", "title": "力扣 322 零钱兑换"},
+                ],
+                "materials_focus": "计概课件：列表字典 + 算法思维",
+            },
+        },
+    }
+    _upsert_plan(db, user_id, plan)
+    _upsert_bb(
+        db,
+        "bb_seed_cs_conflict",
+        {
+            "user_id": user_id,
+            "type": "conflict",
+            "summary": "今晚「分支循环 + 洛谷连刷」约需 70 分钟，超过你设定的每日 50 分钟",
+            "severity": "high",
+            "evidence_refs": json.dumps(
+                [
+                    "传话 · 程计：第 2 天任务估时 70 分钟，已经顶破每日 50 分钟预算。",
+                    "传话 · 安节：别直接砍整晚，给三个选项——先过沙箱 / 顺延洛谷 / 临时加时。",
+                    "传话 · 析因：记下这次拍板，下周排期避开「沙箱+平台」叠压。",
+                    "依据 · 第 2 天「分支与循环沙箱 + 洛谷入门连刷」约 70 分钟",
+                    "约束 · 每日可用时间 ≤ 50 分钟",
+                    "建议动作 · 打开学习计划，选择压缩任务或顺延",
+                ],
+                ensure_ascii=False,
+            ),
+            "status": "open",
+            "resolution": None,
+        },
+    )
+    _upsert_bb(
+        db,
+        "bb_seed_cs_python",
+        {
+            "user_id": user_id,
+            "type": "challenge",
+            "summary": "跳跃游戏草稿用了 O(n²) 穷举，沙箱能过但超时风险高；建议改成维护最远可达",
+            "severity": "medium",
+            "evidence_refs": json.dumps(
+                [
+                    "传话 · 码小助：自测能过，但双重循环在长数组上会炸。",
+                    "传话 · 温题：这题核心是维护 far=max(far, i+step)，一次扫描即可。",
+                    "传话 · 析因：把「能跑通≠够快」记进错因，下一题先问复杂度。",
+                    "依据 · 跳跃游戏沙箱出现超时倾向写法",
+                    "依据 · 中断前未完成进阶自测",
+                    "建议动作 · 确认今晚安排后，再打开 Python 练习台对照",
+                ],
+                ensure_ascii=False,
+            ),
+            "status": "open",
+            "resolution": None,
+        },
+    )
+    _upsert_bb(
+        db,
+        "bb_seed_cs_hist_hash",
+        {
+            "user_id": user_id,
+            "type": "hypothesis",
+            "summary": "（历史）两数之和：先哈希再暴力，正确率与耗时都改善",
+            "severity": "low",
+            "evidence_refs": json.dumps(
+                [
+                    "传话 · 码小助：双重循环能过样例，但 O(n²) 会在长数组翻车。",
+                    "传话 · 温题：标准解是一边扫一边查 target-x。",
+                    "传话 · 析因：把「先问复杂度」写进错因卡。",
+                    "传话 · 程计：明日练习保留一题哈希表热身。",
+                    "依据 · two_sum 暴力通过自测",
+                    "建议动作 · 已对照参考实现复盘",
+                ],
+                ensure_ascii=False,
+            ),
+            "status": "resolved",
+            "resolution": json.dumps(
+                {"action": "ack", "note": "已改用哈希写法"},
+                ensure_ascii=False,
+            ),
+        },
+    )
+    _upsert_bb(
+        db,
+        "bb_seed_cs_hist_debug",
+        {
+            "user_id": user_id,
+            "type": "intervention",
+            "summary": "（历史）IndentationError 卡住 40 分钟后，改成「先跑通再优化」",
+            "severity": "medium",
+            "evidence_refs": json.dumps(
+                [
+                    "传话 · 安节：同一报错停留过久，情绪成本上升。",
+                    "传话 · 码小助：先把 for 循环缩进对齐，别急着写最优解。",
+                    "传话 · 温题：通过自测后再谈复杂度。",
+                    "传话 · 程计：今天任务收成「跑通 1 题」。",
+                    "依据 · IndentationError 停留 40min",
+                    "建议动作 · 已用短目标重启",
+                ],
+                ensure_ascii=False,
+            ),
+            "status": "resolved",
+            "resolution": json.dumps(
+                {"action": "ack", "note": "已先跑通再优化"},
+                ensure_ascii=False,
+            ),
+        },
+    )
+    now = datetime.now(timezone.utc)
+    _replace_attempts(
+        db,
+        user_id,
+        [
+            {
+                "id": "att_cs_hello",
+                "user_id": user_id,
+                "question_id": "cs_local_two_sum",
+                "answer": "用双重循环找两数之和，未用哈希表",
+                "is_correct": True,
+                "error_tag": None,
+                "duration_ms": 480000,
+                "created_at": now - timedelta(days=2),
+            },
+            {
+                "id": "att_cs_loop",
+                "user_id": user_id,
+                "question_id": "cs_local_jump_game",
+                "answer": "穷举所有跳跃路径，未维护最远可达",
+                "is_correct": False,
+                "error_tag": "complexity",
+                "duration_ms": 900000,
+                "created_at": now - timedelta(days=1),
+            },
+        ],
+    )
+    _ensure_ai_log(
+        db,
+        user_id=user_id,
+        intent="create_plan",
+        request_id="seed_cs_create_plan",
+        status="ok",
+        response={"status": "ok", "scenario": "cs_python"},
+    )
+
+
+FOCUS_SEEDERS = {
+    "u_student_math": "_seed_math_conflict",
+    "u_student_physics": "_seed_physics_ok",
+    "u_student_catchup": "_seed_catchup_intervention",
+    "u_student_cs": "_seed_cs_python",
+}
+
+
+def reseed_focus_user(db, user_id: str) -> bool:
+    """仅恢复四个答辩预设账号的开场数据；返回是否命中。"""
+    table = {
+        "u_student_math": _seed_math_conflict,
+        "u_student_physics": _seed_physics_ok,
+        "u_student_catchup": _seed_catchup_intervention,
+        "u_student_cs": _seed_cs_python,
+    }
+    fn = table.get(user_id)
+    if fn is None:
+        return False
+    fn(db, user_id)
+    return True
+
+
 def seed_demo_accounts() -> dict:
     init_db()
     with SessionLocal() as db:
@@ -1106,6 +1636,7 @@ def seed_demo_accounts() -> dict:
         _seed_math_conflict(db, "u_student_math")
         _seed_physics_ok(db, "u_student_physics")
         _seed_catchup_intervention(db, "u_student_catchup")
+        _seed_cs_python(db, "u_student_cs")
         cohort_created = _seed_cohort_students(db)
         db.commit()
         student_total = len(

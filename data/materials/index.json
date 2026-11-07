@@ -1,17 +1,23 @@
 {
   "version": "1.0",
-  "scope": "大学数学 1（上册 8 章）+ 大物 1（第 1–10 章）",
-  "rule": "只登记元数据与页码定位，不转载正文；路径相对 source/_原始下载/",
+  "scope": "大学数学1 + 大物1 + 计算与人工智能概论（Python 试点）",
+  "rule": "只登记元数据与页码定位；路径相对 MATERIALS_ROOT。高数/大物原件按校内教学使用部署；计概为试点科目（代码辅助学习）。资料包/*.pdf 为答辩可读副本。",
   "counts": {
-    "items": 57,
+    "items": 80,
     "chapters": 18,
     "by_kind": {
-      "textbook": 18,
-      "courseware": 18,
-      "homework": 18,
       "answer_book": 2,
-      "textbook_reference": 1
-    }
+      "courseware": 33,
+      "homework": 23,
+      "textbook": 19,
+      "textbook_reference": 3
+    },
+    "by_subject": {
+      "cs": 18,
+      "math": 29,
+      "physics": 33
+    },
+    "pack_preview_pdfs": 5
   },
   "items": [
     {
@@ -445,7 +451,7 @@
       "page_range": null,
       "license_note": "校内教学使用·仅登记元数据，不转载正文",
       "status": "downloaded",
-      "note": null
+      "note": "原件为 PPT，站内预览经 LibreOffice 转 PDF；站内用 PDF 课件便于预览"
     },
     {
       "material_id": "mat_phy_vibration_homework",
@@ -480,7 +486,7 @@
       "page_range": null,
       "license_note": "校内教学使用·仅登记元数据，不转载正文",
       "status": "downloaded",
-      "note": null
+      "note": "原件为 PPT，站内预览经 LibreOffice 转 PDF；站内用 PDF 课件便于预览"
     },
     {
       "material_id": "mat_phy_wave_homework",
@@ -518,7 +524,7 @@
       "page_range": null,
       "license_note": "校内教学使用·仅登记元数据，不转载正文",
       "status": "downloaded",
-      "note": null
+      "note": "原件为 PPT，站内预览经 LibreOffice 转 PDF；站内用 PDF 课件便于预览"
     },
     {
       "material_id": "mat_phy_interference_homework",
@@ -556,7 +562,7 @@
       "page_range": null,
       "license_note": "校内教学使用·仅登记元数据，不转载正文",
       "status": "downloaded",
-      "note": null
+      "note": "原件为 PPT，站内预览经 LibreOffice 转 PDF；站内用 PDF 课件便于预览"
     },
     {
       "material_id": "mat_phy_diffraction_homework",
@@ -594,7 +600,7 @@
       "page_range": null,
       "license_note": "校内教学使用·仅登记元数据，不转载正文",
       "status": "downloaded",
-      "note": null
+      "note": "原件为 PPT，站内预览经 LibreOffice 转 PDF；站内用 PDF 课件便于预览"
     },
     {
       "material_id": "mat_phy_polarization_homework",
@@ -632,7 +638,7 @@
       "page_range": null,
       "license_note": "校内教学使用·仅登记元数据，不转载正文",
       "status": "downloaded",
-      "note": null
+      "note": "原件为 PPT，站内预览经 LibreOffice 转 PDF；站内用 PDF 课件便于预览"
     },
     {
       "material_id": "mat_phy_kinetic_homework",
@@ -670,7 +676,7 @@
       "page_range": null,
       "license_note": "校内教学使用·仅登记元数据，不转载正文",
       "status": "downloaded",
-      "note": null
+      "note": "原件为 PPT，站内预览经 LibreOffice 转 PDF；站内用 PDF 课件便于预览"
     },
     {
       "material_id": "mat_phy_thermo_homework",
@@ -718,6 +724,253 @@
       "license_note": "校内教学使用·仅登记元数据，不转载正文",
       "status": "downloaded",
       "note": "教材课后题答案，扩题来源"
+    },
+    {
+      "material_id": "mat_pack_overview",
+      "subject": "math",
+      "chapter_id": "math.a1.ch02",
+      "kind": "textbook_reference",
+      "title": "资料总览（第1学期）",
+      "file": "资料包/01_资料总览.pdf",
+      "page_range": null,
+      "page_status": "pack_pdf",
+      "license_note": "资料整理同学打包的可读总览，可在站内预览；不含教材原文",
+      "status": "downloaded",
+      "note": "答辩可读副本；网站主路径仍读 JSON"
+    },
+    {
+      "material_id": "mat_pack_math_bank",
+      "subject": "math",
+      "chapter_id": "math.a1.ch02",
+      "kind": "homework",
+      "title": "高数题库 PDF（39题）",
+      "file": "资料包/02_高数题库.pdf",
+      "page_range": null,
+      "page_status": "pack_pdf",
+      "license_note": "与 JSON 题库对应的可读副本，可在站内预览",
+      "status": "downloaded",
+      "note": "题量以 data/questions/math_sample.json 为准"
+    },
+    {
+      "material_id": "mat_pack_physics_bank",
+      "subject": "physics",
+      "chapter_id": "phy.dynamics",
+      "kind": "homework",
+      "title": "大物题库 PDF（20题）",
+      "file": "资料包/03_大物题库.pdf",
+      "page_range": null,
+      "page_status": "pack_pdf",
+      "license_note": "与 JSON 题库对应的可读副本，可在站内预览",
+      "status": "downloaded",
+      "note": "题量以 data/questions/physics_sample.json 为准"
+    },
+    {
+      "material_id": "mat_pack_math_notes",
+      "subject": "math",
+      "chapter_id": "math.a1.ch04",
+      "kind": "courseware",
+      "title": "高数课件精要（自研整理）",
+      "file": "资料包/04_高数课件精要.pdf",
+      "page_range": null,
+      "page_status": "pack_pdf",
+      "license_note": "知序自研章级整理，非课件原文转载；可在站内预览",
+      "status": "downloaded",
+      "note": "对应 data/notes/math/*.md 的印刷版；教材/PPTX 原件不上站"
+    },
+    {
+      "material_id": "mat_pack_physics_notes",
+      "subject": "physics",
+      "chapter_id": "phy.dynamics",
+      "kind": "courseware",
+      "title": "大物课件精要（自研整理）",
+      "file": "资料包/05_大物课件精要.pdf",
+      "page_range": null,
+      "page_status": "pack_pdf",
+      "license_note": "知序自研章级整理，非课件原文转载；可在站内预览",
+      "status": "downloaded",
+      "note": "对应 data/notes/physics/*.md 的印刷版；图片型课件原件不上站"
+    },
+    {
+      "material_id": "mat_cs_textbook_python_basic",
+      "subject": "cs",
+      "chapter_id": "cs.py.basics",
+      "kind": "textbook",
+      "title": "教材 Python语言程序设计基础（第2版）",
+      "file": "计概/00_教材/Python语言程序设计基础第2版本.pdf",
+      "page_range": null,
+      "license_note": "校内教学使用·试点科目",
+      "status": "downloaded"
+    },
+    {
+      "material_id": "mat_cs_textbook_python_crash",
+      "subject": "cs",
+      "chapter_id": "cs.py.basics",
+      "kind": "textbook_reference",
+      "title": "参考书 Python编程：从入门到实践",
+      "file": "计概/00_教材/Python编程：从入门到实践.pdf",
+      "page_range": null,
+      "license_note": "校内教学使用·试点科目",
+      "status": "downloaded"
+    },
+    {
+      "material_id": "mat_cs_cw_var",
+      "subject": "cs",
+      "chapter_id": "cs.py.basics",
+      "kind": "courseware",
+      "title": "课件 变量与表达式",
+      "file": "计概/01_课件/python基础1_变量与表达式.pdf",
+      "status": "downloaded",
+      "license_note": "校内教学使用·试点科目"
+    },
+    {
+      "material_id": "mat_cs_cw_str",
+      "subject": "cs",
+      "chapter_id": "cs.py.basics",
+      "kind": "courseware",
+      "title": "课件 字符串",
+      "file": "计概/01_课件/python基础1_字符串.pdf",
+      "status": "downloaded",
+      "license_note": "校内教学使用·试点科目"
+    },
+    {
+      "material_id": "mat_cs_cw_branch",
+      "subject": "cs",
+      "chapter_id": "cs.py.control",
+      "kind": "courseware",
+      "title": "课件 分支",
+      "file": "计概/01_课件/python基础2_分支.pdf",
+      "status": "downloaded",
+      "license_note": "校内教学使用·试点科目"
+    },
+    {
+      "material_id": "mat_cs_cw_loop",
+      "subject": "cs",
+      "chapter_id": "cs.py.control",
+      "kind": "courseware",
+      "title": "课件 循环",
+      "file": "计概/01_课件/python基础2_循环.pdf",
+      "status": "downloaded",
+      "license_note": "校内教学使用·试点科目"
+    },
+    {
+      "material_id": "mat_cs_cw_list",
+      "subject": "cs",
+      "chapter_id": "cs.py.structures",
+      "kind": "courseware",
+      "title": "课件 列表与字典",
+      "file": "计概/01_课件/python基础3_列表与字典.pdf",
+      "status": "downloaded",
+      "license_note": "校内教学使用·试点科目"
+    },
+    {
+      "material_id": "mat_cs_cw_func",
+      "subject": "cs",
+      "chapter_id": "cs.py.functions",
+      "kind": "courseware",
+      "title": "课件 函数",
+      "file": "计概/01_课件/python基础4_函数.pdf",
+      "status": "downloaded",
+      "license_note": "校内教学使用·试点科目"
+    },
+    {
+      "material_id": "mat_cs_cw_algo1",
+      "subject": "cs",
+      "chapter_id": "cs.py.algorithm",
+      "kind": "courseware",
+      "title": "课件 算法基本概念与效率分析",
+      "file": "计概/01_课件/算法思维1 算法的基本概念与效率分析.pdf",
+      "status": "downloaded",
+      "license_note": "校内教学使用·试点科目"
+    },
+    {
+      "material_id": "mat_cs_cw_algo2",
+      "subject": "cs",
+      "chapter_id": "cs.py.algorithm",
+      "kind": "courseware",
+      "title": "课件 穷举与迭代",
+      "file": "计概/01_课件/算法思维2 基本概念、穷举迭代.pdf",
+      "status": "downloaded",
+      "license_note": "校内教学使用·试点科目"
+    },
+    {
+      "material_id": "mat_cs_cw_algo3",
+      "subject": "cs",
+      "chapter_id": "cs.py.algorithm",
+      "kind": "courseware",
+      "title": "课件 递归与分治",
+      "file": "计概/01_课件/算法思维3 递归与分治.pdf",
+      "status": "downloaded",
+      "license_note": "校内教学使用·试点科目"
+    },
+    {
+      "material_id": "mat_cs_cw_data1",
+      "subject": "cs",
+      "chapter_id": "cs.py.data",
+      "kind": "courseware",
+      "title": "课件 科学计算与数据分析",
+      "file": "计概/01_课件/数据思维1 科学计算与数据分析(1).pdf",
+      "status": "downloaded",
+      "license_note": "校内教学使用·试点科目"
+    },
+    {
+      "material_id": "mat_cs_cw_data2",
+      "subject": "cs",
+      "chapter_id": "cs.py.data",
+      "kind": "courseware",
+      "title": "课件 数据可视化与图像处理",
+      "file": "计概/01_课件/数据思维2 数据可视化与图像处理.pdf",
+      "status": "downloaded",
+      "license_note": "校内教学使用·试点科目"
+    },
+    {
+      "material_id": "mat_cs_cw_dl",
+      "subject": "cs",
+      "chapter_id": "cs.py.network",
+      "kind": "courseware",
+      "title": "课件 深度学习应用入门",
+      "file": "计概/01_课件/数据思维3 深度学习应用入门.pptx",
+      "status": "downloaded",
+      "license_note": "校内教学使用·试点科目"
+    },
+    {
+      "material_id": "mat_cs_cw_net",
+      "subject": "cs",
+      "chapter_id": "cs.py.network",
+      "kind": "courseware",
+      "title": "课件 网络思维",
+      "file": "计概/01_课件/第5章_网络思维.pdf",
+      "status": "downloaded",
+      "license_note": "校内教学使用·试点科目"
+    },
+    {
+      "material_id": "mat_cs_exam_mid_a",
+      "subject": "cs",
+      "chapter_id": "cs.py.control",
+      "kind": "homework",
+      "title": "期中试题 A 卷",
+      "file": "计概/02_试题/期中A卷.pdf",
+      "status": "downloaded",
+      "license_note": "校内教学使用·试点科目"
+    },
+    {
+      "material_id": "mat_cs_exam_mid_b",
+      "subject": "cs",
+      "chapter_id": "cs.py.control",
+      "kind": "homework",
+      "title": "期中试题 B 卷",
+      "file": "计概/02_试题/期中B卷.pdf",
+      "status": "downloaded",
+      "license_note": "校内教学使用·试点科目"
+    },
+    {
+      "material_id": "mat_cs_exam_mid_mock",
+      "subject": "cs",
+      "chapter_id": "cs.py.functions",
+      "kind": "homework",
+      "title": "期中模拟卷",
+      "file": "计概/02_试题/期中模拟.pdf",
+      "status": "downloaded",
+      "license_note": "校内教学使用·试点科目"
     }
   ]
 }

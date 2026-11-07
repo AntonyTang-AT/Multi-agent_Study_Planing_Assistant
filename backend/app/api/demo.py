@@ -1,4 +1,4 @@
-"""演示辅助：时间跳跃等。只改演示时钟/偏移，不写智能。"""
+"""演示辅助：时间跳跃、恢复预设种子。只改数据/时钟，不写智能。"""
 
 from __future__ import annotations
 
@@ -43,4 +43,27 @@ def time_jump(
         "user_id": user.id,
         "time_jump_days": user.demo_time_jump_days,
         "message": "演示时钟偏移已更新；下次 AI 调用将带上 demo.time_jump_days",
+    }
+
+
+@router.post("/api/demo/reset")
+def reset_preset(
+    user: User = Depends(require_user),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """把当前演示账号恢复到开场预设（计划/黑板/作答），不清空账号本身。"""
+    from scripts.seed_demo_accounts import reseed_focus_user
+
+    ok = reseed_focus_user(db, user.id)
+    if not ok:
+        raise AppError(
+            code="not_demo_account",
+            message="当前账号不是演示预设账号，无法一键恢复开场数据",
+            status_code=400,
+        )
+    db.commit()
+    return {
+        "ok": True,
+        "user_id": user.id,
+        "message": "已恢复为开场预设学习数据（非清空账号）",
     }

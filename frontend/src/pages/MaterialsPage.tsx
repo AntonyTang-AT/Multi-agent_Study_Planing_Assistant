@@ -18,11 +18,11 @@ import {
   Space,
   Spin,
   Tag,
+  message,
 } from "antd";
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
-import { apiClient } from "../api/client";
 import { agentErrorMessage } from "../api/ai";
 import {
   fetchChapterGuide,
@@ -31,6 +31,7 @@ import {
   type MaterialQuery,
 } from "../api/backend";
 import { NextStepCard } from "../components/NextStepCard";
+import { appEnv } from "../config/env";
 import { chapterById } from "../data/chapters";
 import type { ChapterGuide, Material, Question, Subject } from "../types/api";
 
@@ -59,7 +60,9 @@ export function MaterialsPage() {
   const initialKeyword = searchParams.get("q") || "";
 
   const [subject, setSubject] = useState<SubjectFilter>(
-    initialSubject === "math" || initialSubject === "physics"
+    initialSubject === "math" ||
+      initialSubject === "physics" ||
+      initialSubject === "cs"
       ? initialSubject
       : "all",
   );
@@ -70,10 +73,7 @@ export function MaterialsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [fileLoading, setFileLoading] = useState(false);
   const [fileError, setFileError] = useState<string | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  useEffect(() => () => { if (previewUrl) URL.revokeObjectURL(previewUrl); }, [previewUrl]);
 
   const [activeMaterial, setActiveMaterial] = useState<Material | null>(null);
   const [guide, setGuide] = useState<ChapterGuide | null>(null);
@@ -85,7 +85,11 @@ export function MaterialsPage() {
     const nextSubject = searchParams.get("subject");
     const nextChapter = searchParams.get("chapter") || "";
     const nextKeyword = searchParams.get("q") || "";
-    if (nextSubject === "math" || nextSubject === "physics") {
+    if (
+      nextSubject === "math" ||
+      nextSubject === "physics" ||
+      nextSubject === "cs"
+    ) {
       setSubject(nextSubject);
     } else if (!nextSubject) {
       // keep current unless cleared
@@ -153,42 +157,57 @@ export function MaterialsPage() {
     };
   }, [activeMaterial]);
 
-  const openFile = async (material: Material, preview: boolean) => {
-    setFileLoading(true);
+  const materialFileUrl = (material: Material, preview: boolean) => {
+    const base = appEnv.apiBase.replace(/\/$/, "");
+    const action = preview ? "preview" : "download";
+    return `${base}/api/materials/${encodeURIComponent(material.material_id)}/${action}`;
+  };
+
+  const openFile = (material: Material, preview: boolean) => {
+    // 原件接口无需鉴权：浏览器直链打开。
+    // 禁止 axios+blob：大 PDF 整包进内存会卡死主线程。
+    // 禁止在 SPA 内嵌 Chrome PDF（Modal/Drawer+iframe）：插件抢焦点，Esc/关闭失效，体感卡死。
+    // 禁止 attachment 用 target=_blank：常留下空白标签页，像页面挂死。
     setFileError(null);
-    try {
-      const response = await apiClient.get<Blob>(
-        `/api/materials/${encodeURIComponent(material.material_id)}/${preview ? "preview" : "download"}`,
-        { responseType: "blob", timeout: 90_000 },
-      );
-      const url = URL.createObjectURL(response.data);
-      if (preview) {
-        setPreviewUrl((prev) => {
-          if (prev) URL.revokeObjectURL(prev);
-          return url;
-        });
-      } else {
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = material.file?.split("/").pop() || material.title;
-        link.click();
-        window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
-      }
-    } catch (error) {
-      // Axios blob errors must be decoded before displaying the API message.
-      let message = "资料暂时无法打开，请稍后重试或下载原件";
-      const blob = (error as { response?: { data?: unknown } }).response?.data;
-      if (blob instanceof Blob) {
-        try {
-          message = JSON.parse(await blob.text()).message || message;
-        } catch {
-          /* keep fallback */
-        }
-      }
-      setFileError(message);
-    } finally {
-      setFileLoading(false);
+    if (!material.available) {
+      const text = "原始资料尚未部署，请联系管理员补充文件";
+      setFileError(text);
+      message.warning(text);
+      return;
     }
+    if (preview && !material.preview_available) {
+      const text = "该格式暂不支持在线预览，请下载原件";
+      setFileError(text);
+      message.warning(text);
+      return;
+    }
+
+    const url = materialFileUrl(material, preview);
+    // 先关掉导学，避免焦点陷阱残留
+    setActiveMaterial(null);
+
+    if (preview) {
+      // 用 <a target=_blank>：比 window.open(..., noopener) 可靠（后者常返回 null / 空白页）
+      const link = document.createElement("a");
+      link.href = url;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      message.success("已在新标签打开原件预览");
+      return;
+    }
+
+    // attachment：隐藏 iframe 触发下载，不离开当前页、不弹空白标签
+    const frame = document.createElement("iframe");
+    frame.setAttribute("aria-hidden", "true");
+    frame.style.cssText =
+      "position:fixed;left:0;top:0;width:0;height:0;border:0;opacity:0;pointer-events:none";
+    frame.src = url;
+    document.body.appendChild(frame);
+    window.setTimeout(() => frame.remove(), 60_000);
+    message.success("已开始下载原件");
   };
 
   const syncQuery = (next: {
@@ -278,6 +297,7 @@ export function MaterialsPage() {
               { label: "全部学科", value: "all" },
               { label: "高等数学", value: "math" },
               { label: "大学物理", value: "physics" },
+              { label: "计概 Python", value: "cs" },
             ]}
           />
           <Segmented
@@ -337,7 +357,13 @@ export function MaterialsPage() {
                 </p>
                 <div className="material-card__tags">
                   <Tag color="blue">
-                    {material.subject === "math" ? "高等数学" : "大学物理"}
+                    {material.subject === "math"
+                      ? "高等数学"
+                      : material.subject === "physics"
+                        ? "大学物理"
+                        : material.subject === "cs"
+                          ? "计概 Python"
+                          : material.subject}
                   </Tag>
                   <Tag>{material.chapter_id}</Tag>
                   {(material.tags || []).slice(0, 2).map((tag) => (
@@ -353,7 +379,7 @@ export function MaterialsPage() {
                   <span>{material.available ? "原件可用" : "原件未部署"}</span>
                 </div>
                 <div className="material-card__actions">
-                  <Button size="small" type="link" disabled={!material.available || fileLoading}
+                  <Button size="small" type="link" disabled={!material.available}
                     onClick={() => openFile(material, false)}>下载原件</Button>
                   <Button
                     size="small"
@@ -409,11 +435,6 @@ export function MaterialsPage() {
         icon={<FileTextOutlined />}
       />
 
-      <Drawer title="资料原件预览" width="90vw" open={Boolean(previewUrl)}
-        onClose={() => setPreviewUrl(null)} destroyOnClose>
-        {previewUrl ? <iframe title="资料 PDF 预览" src={`${previewUrl}#page=${activeMaterial?.page_range?.[0] || 1}`}
-          style={{ width: "100%", height: "75vh", border: 0 }} /> : null}
-      </Drawer>
       <Drawer
         className="material-guide-drawer"
         title={
@@ -426,7 +447,7 @@ export function MaterialsPage() {
         styles={{ wrapper: { maxWidth: "100vw" } }}
         open={Boolean(activeMaterial)}
         onClose={() => setActiveMaterial(null)}
-        destroyOnClose
+        destroyOnHidden
       >
         {activeMaterial ? (
           <Spin spinning={guideLoading}>
@@ -452,11 +473,28 @@ export function MaterialsPage() {
 
               <section className="material-guide__block">
                 <Space wrap>
-                  <Button loading={fileLoading} disabled={!activeMaterial.preview_available}
-                    onClick={() => openFile(activeMaterial, true)}>预览原件</Button>
-                  <Button loading={fileLoading} disabled={!activeMaterial.available}
-                    onClick={() => openFile(activeMaterial, false)}>下载原件</Button>
+                  <Button
+                    disabled={!activeMaterial.preview_available}
+                    onClick={() => openFile(activeMaterial, true)}
+                  >
+                    预览原件
+                  </Button>
+                  <Button
+                    disabled={!activeMaterial.available}
+                    onClick={() => openFile(activeMaterial, false)}
+                  >
+                    下载原件
+                  </Button>
                 </Space>
+                {activeMaterial.size_bytes && activeMaterial.size_bytes > 8_000_000 ? (
+                  <Alert
+                    style={{ marginTop: 12 }}
+                    type="warning"
+                    showIcon
+                    message={`该原件约 ${(activeMaterial.size_bytes / 1_000_000).toFixed(0)} MB`}
+                    description="大教材会受网速限制。预览已改为 nginx 直传 + 浏览器自带 PDF 阅读器；仍慢请改用「下载原件」，或优先打开资料包中的精要 PDF（通常 <1MB）。"
+                  />
+                ) : null}
                 {!activeMaterial.available ? <Alert style={{ marginTop: 12 }} type="info" showIcon
                   message="原始资料尚未部署" description="仍可查看导学；请联系管理员补充对应文件。" /> :
                   !activeMaterial.preview_available ? <p>该资料暂不支持在线预览，可下载原件阅读。</p> : null}

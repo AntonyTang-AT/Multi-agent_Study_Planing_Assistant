@@ -68,18 +68,46 @@ export const PHYSICS_CHAPTERS: ChapterOption[] = [
   },
 ];
 
+/** 计算与人工智能概论（Python）试点章节 */
+export const CS_CHAPTERS: ChapterOption[] = [
+  {
+    id: "cs.py.basics",
+    name: "Python 基础：变量、表达式与字符串",
+    label: "Python 基础",
+  },
+  { id: "cs.py.control", name: "分支与循环", label: "分支与循环" },
+  { id: "cs.py.structures", name: "列表与字典", label: "列表与字典" },
+  { id: "cs.py.functions", name: "函数", label: "函数" },
+  { id: "cs.py.algorithm", name: "算法思维", label: "算法思维", examHot: true },
+  {
+    id: "cs.py.data",
+    name: "数据思维与可视化",
+    label: "数据思维",
+    examHot: true,
+  },
+  {
+    id: "cs.py.network",
+    name: "网络思维与深度学习入门",
+    label: "网络 / 深度学习",
+  },
+];
+
 export function chaptersForSubject(
-  subject: "math" | "physics",
+  subject: "math" | "physics" | "cs",
 ): ChapterOption[] {
-  return subject === "physics" ? PHYSICS_CHAPTERS : MATH_CHAPTERS;
+  if (subject === "physics") return PHYSICS_CHAPTERS;
+  if (subject === "cs") return CS_CHAPTERS;
+  return MATH_CHAPTERS;
 }
 
 export function chapterById(id: string): ChapterOption | undefined {
-  return [...MATH_CHAPTERS, ...PHYSICS_CHAPTERS].find((item) => item.id === id);
+  return [...MATH_CHAPTERS, ...PHYSICS_CHAPTERS, ...CS_CHAPTERS].find(
+    (item) => item.id === id,
+  );
 }
 
 export function chapterByLabelOrName(
-  subject: "math" | "physics",
+  subject: "math" | "physics" | "cs",
   value: string,
 ): ChapterOption | undefined {
   const list = chaptersForSubject(subject);

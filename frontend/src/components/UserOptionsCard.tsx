@@ -1,7 +1,7 @@
 import { CheckCircleOutlined, WarningOutlined } from "@ant-design/icons";
 import { Alert, Button, Radio, Tag } from "antd";
 
-import type { AgentStatus, UserOption } from "../types/api";
+import type { AgentStatus, Subject, UserOption } from "../types/api";
 
 interface UserOptionsCardProps {
   options: UserOption[];
@@ -9,15 +9,31 @@ interface UserOptionsCardProps {
   status: "idle" | AgentStatus;
   message: string;
   loading: boolean;
+  subject?: Subject | string;
   onChange: (id: string) => void;
   onSubmit: () => void;
 }
 
-const optionDescriptions: Record<string, string> = {
+const MATH_OPTION_DESCRIPTIONS: Record<string, string> = {
   extend_time: "保留今晚任务深度，把每日可用时间调到约 60 分钟",
   reduce_depth: "仍用 45 分钟，证明题改成精读关键步骤",
   adjust_goal: "把连续性证明挪到周末，今晚只做基础题",
 };
+
+const CS_OPTION_DESCRIPTIONS: Record<string, string> = {
+  extend_time: "保留今晚沙箱 + 洛谷分量，把每日可用时间调到约 70 分钟",
+  reduce_depth: "仍用 50 分钟，先过沙箱自测，洛谷提交挪到明天",
+  adjust_goal: "把洛谷入门挪到周末，今晚只做分支循环沙箱",
+};
+
+function optionDescription(
+  optionId: string,
+  subject?: Subject | string,
+): string {
+  const table =
+    subject === "cs" ? CS_OPTION_DESCRIPTIONS : MATH_OPTION_DESCRIPTIONS;
+  return table[optionId] || "确认后会按这个方向重排今晚任务";
+}
 
 export function UserOptionsCard({
   options,
@@ -25,6 +41,7 @@ export function UserOptionsCard({
   status,
   message,
   loading,
+  subject,
   onChange,
   onSubmit,
 }: UserOptionsCardProps) {
@@ -80,7 +97,7 @@ export function UserOptionsCard({
               >
                 <span className="decision-option__title">{option.label}</span>
                 <span className="decision-option__description">
-                  {optionDescriptions[option.id] || "确认后会按这个方向重排今晚任务"}
+                  {optionDescription(option.id, subject)}
                 </span>
               </Radio>
             ))}

@@ -1,0 +1,62 @@
+{
+  "subject": "cs",
+  "title": "计算与人工智能概论（Python）章级大纲",
+  "version": "1.0",
+  "verified": false,
+  "scope_note": "试点科目：按课件主题组织，服务代码入门 / 算法思维 / 数据与网络思维；强调可运行示例与排错辅导。",
+  "counts": {
+    "chapters": 7,
+    "knowledge_points": 0
+  },
+  "nodes": [
+    {
+      "id": "cs.py.basics",
+      "name": "Python 基础：变量、表达式与字符串",
+      "level": "chapter",
+      "no": 1,
+      "children": []
+    },
+    {
+      "id": "cs.py.control",
+      "name": "分支与循环",
+      "level": "chapter",
+      "no": 2,
+      "children": []
+    },
+    {
+      "id": "cs.py.structures",
+      "name": "列表与字典",
+      "level": "chapter",
+      "no": 3,
+      "children": []
+    },
+    {
+      "id": "cs.py.functions",
+      "name": "函数",
+      "level": "chapter",
+      "no": 4,
+      "children": []
+    },
+    {
+      "id": "cs.py.algorithm",
+      "name": "算法思维",
+      "level": "chapter",
+      "no": 5,
+      "children": []
+    },
+    {
+      "id": "cs.py.data",
+      "name": "数据思维与可视化",
+      "level": "chapter",
+      "no": 6,
+      "children": []
+    },
+    {
+      "id": "cs.py.network",
+      "name": "网络思维与深度学习入门",
+      "level": "chapter",
+      "no": 7,
+      "children": []
+    }
+  ]
+}
