@@ -24,7 +24,7 @@ import type { StudentPersona } from "../types/persona";
 
 export interface ScenarioSetup {
   mode: "final_review" | "catch_up";
-  subject: "math" | "physics";
+  subject: "math" | "physics" | "cs";
   dailyMinutes: number;
   examDate: string;
   chapter: string;
@@ -65,6 +65,7 @@ interface LearningState {
   resetPractice: () => void;
   applyIntervention: (response: AgentResponse) => void;
   mergeBlackboard: (entries: BlackboardEntry[]) => void;
+  replaceBlackboard: (entries: BlackboardEntry[]) => void;
   resolveEntry: (entryId: string) => void;
   addAttempt: (attempt: Attempt) => void;
   setAttempts: (attempts: Attempt[]) => void;
@@ -197,6 +198,7 @@ export const useLearningStore = create<LearningState>()(
         set((state) => ({
           blackboard: mergeEntries(state.blackboard, entries),
         })),
+      replaceBlackboard: (entries) => set({ blackboard: entries }),
       resolveEntry: (entryId) =>
         set((state) => ({
           blackboard: state.blackboard.map((entry) =>

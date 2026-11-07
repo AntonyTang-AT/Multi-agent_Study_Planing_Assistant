@@ -9,7 +9,19 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { agentErrorMessage, invokeAgent } from "../api/ai";
+import { fetchQuestions } from "../api/backend";
+import { MathText } from "../components/MathText";
 import { NextStepCard } from "../components/NextStepCard";
+import {
+  bestQuestionIndex,
+  buildSolveMessage,
+  chapterById,
+  detectSolveChapter,
+  isSolveIntent,
+  matchLocalSolve,
+  materialsPath,
+  practicePath,
+} from "../data/chatSolveRules";
 import { getPersonaBundle } from "../data/personaContent";
 import { useAuthStore } from "../stores/useAuthStore";
 import { useLearningStore } from "../stores/useLearningStore";
@@ -97,13 +109,24 @@ export function ChatPage() {
     threadEnd.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages, thinking]);
 
-  const go = (path: string) =>
-    navigate(demoMode ? `${path}?demo=1` : path);
+  const go = (path: string) => {
+    if (!demoMode) {
+      navigate(path);
+      return;
+    }
+    const sep = path.includes("?") ? "&" : "?";
+    navigate(`${path}${sep}demo=1`);
+  };
+
+  const conflictNote = () =>
+    planStatus === "conflict"
+      ? "另外：今晚计划可能偏满，可先到计划页做个取舍，再继续练。"
+      : undefined;
 
   const agentReply = async (
     text: string,
   ): Promise<{ text: string; options?: ChatOption[] } | null> => {
-    if (/质疑|假设|遗漏条件|定义域|单侧/.test(text)) {
+    if (/质疑|漏了假设|遗漏条件|单侧极限|是不是漏/.test(text)) {
       const response = await invokeAgent("challenge", {
         scenario: setup.mode,
         input: {
@@ -167,6 +190,118 @@ export function ChatPage() {
     return null;
   };
 
+  const solveReply = async (
+    text: string,
+  ): Promise<{ text: string; options?: ChatOption[] } | null> => {
+    // 找资料交给场景矩阵，避免「打开极限资料」被做题意图抢走
+    if (/资料|课件|教材|页码|讲义/.test(text)) return null;
+    if (!isSolveIntent(text)) return null;
+
+    const local = matchLocalSolve(text);
+    const chapter =
+      (local ? chapterById(local.chapterId) : null) ||
+      detectSolveChapter(text) ||
+      chapterById(
+        setup.subject === "physics" ? "phy.dynamics" : "math.a1.ch04",
+      )!;
+
+    let bankHit: {
+      question_id: string;
+      stem: string;
+      answer: string;
+      assumptions: string[];
+    } | null = null;
+    try {
+      const questions = await fetchQuestions({ knowledgeId: chapter.id });
+      const idx = bestQuestionIndex(
+        text,
+        questions.map((q) => q.stem),
+      );
+      if (idx >= 0) {
+        const q = questions[idx];
+        bankHit = {
+          question_id: q.question_id,
+          stem: q.stem,
+          answer: q.answer,
+          assumptions: q.assumptions || [],
+        };
+      }
+    } catch {
+      bankHit = null;
+    }
+
+    const options: ChatOption[] = [
+      {
+        label: `去练${chapter.label}`,
+        path: practicePath(chapter.id, bankHit?.question_id),
+      },
+      {
+        label: "看本章资料",
+        path: materialsPath(chapter.id, chapter.subject),
+      },
+    ];
+    if (planStatus === "conflict") {
+      options.push({ label: "先处理计划冲突", path: "/plan" });
+    }
+
+    // 本地微规则优先（答辩高频问法），再题库命中，再主题导学
+    if (local) {
+      return {
+        text: buildSolveMessage({
+          title: local.title,
+          chapterLabel: chapter.label,
+          steps: local.steps,
+          answer: local.answer,
+          note: "正式作答与订正请到练习中心完成，对话只给简要导学。",
+          conflictNote: conflictNote(),
+        }),
+        options,
+      };
+    }
+
+    if (bankHit) {
+      const stemBrief =
+        bankHit.stem.length > 120
+          ? `${bankHit.stem.slice(0, 120)}…`
+          : bankHit.stem;
+      const steps = [
+        `题库相近题：${stemBrief}`,
+        ...(bankHit.assumptions.length
+          ? [`先核对假设：${bankHit.assumptions.slice(0, 2).join("；")}`]
+          : ["先写出已知条件与要求，再选公式。"]),
+        "对照参考答案验算；完整提交请去练习页。",
+      ];
+      return {
+        text: buildSolveMessage({
+          title: "题库命中相近题",
+          chapterLabel: chapter.label,
+          steps,
+          answer: bankHit.answer,
+          note: "完整作答请去练习中心，避免与练习轨迹双写。",
+          conflictNote: conflictNote(),
+        }),
+        options: [
+          {
+            label: "去做这道相关题",
+            path: practicePath(chapter.id, bankHit.question_id),
+          },
+          ...options.slice(1),
+        ],
+      };
+    }
+
+    return {
+      text: buildSolveMessage({
+        title: `关于「${chapter.label}」怎么下手`,
+        chapterLabel: chapter.label,
+        steps: chapter.guideSteps,
+        note: "我还不能自由解复杂题。完整作答请去练习中心，按章节练 1～2 道。",
+        conflictNote: conflictNote(),
+      }),
+      options,
+    };
+  };
+
   const reply = (text: string) => {
     const openConflict = blackboard.find(
       (entry) => entry.type === "conflict" && entry.status === "open",
@@ -176,7 +311,81 @@ export function ChatPage() {
     );
     const passed = attempts.filter((a) => a.is_correct === true).length;
 
-    if (/冲突|不够|超时|时间不够|今晚|证明/.test(text)) {
+    if (/资料|课件|教材|页码|讲义/.test(text)) {
+      const chapter =
+        detectSolveChapter(text) ||
+        chapterById(
+          setup.chapter ||
+            (setup.subject === "physics" ? "phy.dynamics" : "math.a1.ch02"),
+        ) ||
+        chapterById("math.a1.ch02")!;
+      return {
+        text: `可以去资料页看「${chapter.label}」的教材页码、课件与作业提示${
+          planStatus === "conflict" ? "；另外今晚计划可能超时，可顺手到计划页看一眼。" : "。"
+        }`,
+        options: [
+          {
+            label: "打开本章资料",
+            path: materialsPath(chapter.id, chapter.subject),
+          },
+          { label: "去练本章", path: practicePath(chapter.id) },
+        ],
+      };
+    }
+    if (/提醒|黑板|待办/.test(text)) {
+      return {
+        text: `提醒黑板上还有 ${
+          blackboard.filter((entry) => entry.status === "open").length
+        } 条待处理事项，可去确认冲突、干预或质疑卡片。`,
+        options: [
+          { label: "打开提醒黑板", path: "/blackboard" },
+          { label: "查看计划", path: "/plan" },
+        ],
+      };
+    }
+    if (/换场景|重新设定|重设场景|换人设/.test(text)) {
+      return {
+        text: "要换场景或重新设定每日时间，请回首页走一遍场景向导；确认后计划会按新约束重算。",
+        options: [
+          { label: "回首页向导", path: "/" },
+          { label: "先看当前计划", path: "/plan" },
+        ],
+      };
+    }
+    if (/你好|您好|你能做什么|你会什么|帮助|怎么用/.test(text)) {
+      return {
+        text: [
+          "我可以帮你处理这些事：",
+          "· 做题问答（如「5x 的导数」「极限怎么求」）→ 简要步骤 + 跳转练习",
+          "· 计划冲突 / 今晚安排 / 中断恢复",
+          "· 结构化质疑、错因复盘",
+          "· 找资料、看待办黑板",
+          planStatus === "conflict"
+            ? "提示：当前计划可能超时，需要时可先去计划页取舍。"
+            : "直接说你卡在哪，或点下方快捷句。",
+        ].join("\n"),
+        options: [
+          { label: "查看计划", path: "/plan" },
+          { label: "进入练习", path: "/practice" },
+          { label: "发起质疑示例", path: "/practice" },
+        ],
+      };
+    }
+    if (/练习|安排|明日|今天该|今晚练|该练什么/.test(text)) {
+      const nextTask = plan?.tasks.find(
+        (task) => (task as { status?: string }).status !== "done",
+      );
+      return {
+        text: nextTask
+          ? `建议先做：Day ${nextTask.day}「${nextTask.action}${nextTask.object}」，大约 ${nextTask.minutes} 分钟。`
+          : "当前没有待做任务，可以去练习中心自由练一题。",
+        options: [
+          { label: "打开计划", path: "/plan" },
+          { label: "进入练习", path: "/practice" },
+        ],
+      };
+    }
+    if (/冲突|不够|超时|时间不够|今晚.*(不够|超时|冲突)|证明/.test(text)) {
       return {
         text: openConflict
           ? `${openConflict.summary}。你可以多挤一点时间、先降低今晚难度，或把难点挪到周末。`
@@ -200,7 +409,7 @@ export function ChatPage() {
         ],
       };
     }
-    if (/错|摩擦|夹逼|斜面|正确率|薄弱/.test(text)) {
+    if (/正确率|薄弱|总是错|为什么错|夹逼/.test(text)) {
       const weak = persona?.weak_points?.[0];
       return {
         text: weak
@@ -208,20 +417,6 @@ export function ChatPage() {
           : "可以先打开学习轨迹，看最近错在哪一类。",
         options: [
           { label: "打开学习轨迹", path: "/trace" },
-          { label: "进入练习", path: "/practice" },
-        ],
-      };
-    }
-    if (/题|练习|安排|明日|今天该/.test(text)) {
-      const nextTask = plan?.tasks.find(
-        (task) => (task as { status?: string }).status !== "done",
-      );
-      return {
-        text: nextTask
-          ? `建议先做：Day ${nextTask.day}「${nextTask.action}${nextTask.object}」，大约 ${nextTask.minutes} 分钟。`
-          : "当前没有待做任务，可以去练习中心自由练一题。",
-        options: [
-          { label: "打开计划", path: "/plan" },
           { label: "进入练习", path: "/practice" },
         ],
       };
@@ -238,13 +433,22 @@ export function ChatPage() {
       };
     }
     return {
-      text:
+      text: [
+        "我没完全听懂这句。你可以这样问我：",
+        "· 「5x 的导数是什么」「极限怎么求」——做题导学",
+        "· 「今晚时间不够」「今天该练什么」——计划安排",
+        "· 「这题是不是漏了假设」「帮我错因复盘」——质疑/复盘",
+        "· 「打开极限资料」「看待办」——资料与黑板",
         planStatus === "conflict"
-          ? "今晚安排可能超时，建议先去计划页做个选择，再继续学习。"
-          : "我可以继续帮你看计划、错因和下一步。直接说今晚还剩多少时间，或你卡在哪一题。",
+          ? "另外：今晚安排可能超时，建议先去计划页做个选择。"
+          : "",
+      ]
+        .filter(Boolean)
+        .join("\n"),
       options: [
         { label: "查看当前计划", path: "/plan" },
-        { label: "查看学习轨迹", path: "/trace" },
+        { label: "进入练习", path: "/practice" },
+        { label: "发起质疑示例", path: "/practice" },
       ],
     };
   };
@@ -266,7 +470,8 @@ export function ChatPage() {
     void (async () => {
       try {
         const fromAgent = await agentReply(text);
-        const response = fromAgent || reply(text);
+        const fromSolve = fromAgent ? null : await solveReply(text);
+        const response = fromAgent || fromSolve || reply(text);
         setMessages((current) => [
           ...current,
           {
@@ -278,7 +483,7 @@ export function ChatPage() {
           },
         ]);
       } catch (error) {
-        const fallback = reply(text);
+        const fallback = (await solveReply(text).catch(() => null)) || reply(text);
         setMessages((current) => [
           ...current,
           {
@@ -299,13 +504,17 @@ export function ChatPage() {
   const quickAsks =
     persona?.quick_asks?.length
       ? [
-          ...persona.quick_asks.slice(0, 3),
+          ...persona.quick_asks.slice(0, 2),
+          "这题怎么求导数",
+          "今晚练什么",
+          "打开极限资料",
           "这题是不是漏了假设？",
-          "帮我做一次错因复盘",
         ]
       : [
+          "这题怎么求导数",
+          "今晚练什么",
+          "打开极限资料",
           "今晚时间不够怎么办",
-          "今天该练什么",
           "这题是不是漏了假设？",
           "帮我做一次错因复盘",
         ];
@@ -368,7 +577,9 @@ export function ChatPage() {
                     </strong>
                     <span>{item.time}</span>
                   </div>
-                  <div className="chat-message__bubble">{item.text}</div>
+                  <div className="chat-message__bubble">
+                    <MathText text={item.text} />
+                  </div>
                   {item.options ? (
                     <div className="chat-message__options">
                       {item.options.map((option) => (

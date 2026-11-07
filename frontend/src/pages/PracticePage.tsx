@@ -23,6 +23,7 @@ import { Link, useSearchParams } from "react-router-dom";
 
 import { agentErrorMessage, invokeAgent } from "../api/ai";
 import { fetchQuestions, submitAttempt } from "../api/backend";
+import { PythonIdeWorkspace } from "../components/cs/PythonIdeWorkspace";
 import { NextStepCard } from "../components/NextStepCard";
 import { chapterByLabelOrName } from "../data/chapters";
 import { getPersonaBundle } from "../data/personaContent";
@@ -63,6 +64,21 @@ function mergeBanks(
 export function PracticePage() {
   const [searchParams] = useSearchParams();
   const username = useAuthStore((state) => state.user?.username);
+  const setup = useLearningStore((state) => state.setup);
+  const csMode =
+    username === "cs" ||
+    setup.subject === "cs" ||
+    searchParams.get("track") === "cs" ||
+    searchParams.get("subject") === "cs";
+  if (csMode) {
+    return <PythonIdeWorkspace />;
+  }
+  return <StandardPracticePage />;
+}
+
+function StandardPracticePage() {
+  const [searchParams] = useSearchParams();
+  const username = useAuthStore((state) => state.user?.username);
   const bundle = getPersonaBundle(username);
   const setup = useLearningStore((state) => state.setup);
   const plan = useLearningStore((state) => state.plan);
@@ -101,6 +117,29 @@ export function PracticePage() {
     return task?.knowledge_ids?.[0];
   }, [plan, searchParams]);
 
+  const deepLinkQuestion = useMemo(
+    () => searchParams.get("question") || searchParams.get("q"),
+    [searchParams],
+  );
+
+  const pickActiveId = (items: PracticeItem[]) => {
+    const fallback = items[0]?.question_id || demoQuestion.question_id;
+    if (!deepLinkQuestion) return fallback;
+    const needle = deepLinkQuestion.trim().toLowerCase();
+    const byId = items.find(
+      (item) => item.question_id.toLowerCase() === needle,
+    );
+    if (byId) return byId.question_id;
+    const byStem = items.find((item) => {
+      const stem = item.stem.toLowerCase();
+      return (
+        stem.includes(needle) ||
+        needle.split(/\s+/).filter(Boolean).every((token) => stem.includes(token))
+      );
+    });
+    return byStem?.question_id || fallback;
+  };
+
   useEffect(() => {
     let cancelled = false;
     const personaBank = bundle?.practice_bank?.length
@@ -129,20 +168,27 @@ export function PracticePage() {
             ? `人设 + 题库（${preferredKnowledge}）`
             : `人设 + 题库 · ${setup.subject === "math" ? "高等数学" : "大学物理"}`,
         );
-        setActiveId(merged[0]?.question_id || demoQuestion.question_id);
+        setActiveId(pickActiveId(merged));
       } catch {
         if (cancelled) return;
         const fallback = personaBank.length ? personaBank : [demoQuestion];
         setBank(fallback);
         setBankSource("人设题单（题库暂不可用）");
-        setActiveId(fallback[0]?.question_id || demoQuestion.question_id);
+        setActiveId(pickActiveId(fallback));
       }
     };
     void load();
     return () => {
       cancelled = true;
     };
-  }, [bundle, preferredKnowledge, setup.mode, setup.subject, username]);
+  }, [
+    bundle,
+    deepLinkQuestion,
+    preferredKnowledge,
+    setup.mode,
+    setup.subject,
+    username,
+  ]);
 
   useEffect(() => {
     setAnswer("");

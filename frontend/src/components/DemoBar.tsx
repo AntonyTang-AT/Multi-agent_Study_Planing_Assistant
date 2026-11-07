@@ -10,7 +10,8 @@ import { Button, Tag, message } from "antd";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { agentErrorMessage, invokeAgent } from "../api/ai";
-import { postTimeJump } from "../api/backend";
+import { postTimeJump, resetDemoPreset } from "../api/backend";
+import { useAuthStore } from "../stores/useAuthStore";
 import { useLearningStore } from "../stores/useLearningStore";
 
 export function DemoBar() {
@@ -32,7 +33,8 @@ export function DemoBar() {
     (state) => state.applyIntervention,
   );
   const mergeBlackboard = useLearningStore((state) => state.mergeBlackboard);
-  const resetDemo = useLearningStore((state) => state.resetDemo);
+  const hydrateForUser = useLearningStore((state) => state.hydrateForUser);
+  const user = useAuthStore((state) => state.user);
 
   if (searchParams.get("demo") !== "1") return null;
 
@@ -232,13 +234,28 @@ export function DemoBar() {
           size="small"
           type="text"
           icon={<ReloadOutlined />}
-          onClick={() => {
-            resetDemo();
-            navigate({ pathname: "/", search: "?demo=1" });
-            message.success("演示数据已重置");
+          disabled={loading}
+          onClick={async () => {
+            if (!user?.id) {
+              message.warning("请先登录演示账号");
+              return;
+            }
+            setLoading(true);
+            try {
+              await resetDemoPreset();
+              // 强制重新拉服务端种子，避免本地清空后变成「空账号」
+              useLearningStore.setState({ hydratedUserId: null });
+              await hydrateForUser(user.id);
+              navigate({ pathname: "/blackboard", search: "?demo=1" });
+              message.success("已恢复开场预设（不是清空账号）");
+            } catch (error) {
+              message.error(agentErrorMessage(error));
+            } finally {
+              setLoading(false);
+            }
           }}
         >
-          重置
+          恢复预设
         </Button>
       </div>
     </aside>

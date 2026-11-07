@@ -1,7 +1,7 @@
 {
   "subject": "physics",
-  "version": "1.0",
-  "scope": "《大学物理学（Ⅰ）》第 1–10 章（大物 A1，64 学时）",
+  "version": "1.2",
+  "scope": "《大学物理学（Ⅰ）》1–10 章（大物 A1）；共 20 题（v1.0 的 15 题 + v1.2 追加 5 道难题），每章 1–2 题，力学相关章 2–3 题",
   "exam_hot_source": "exams/exam_hot_physics.json（2012–2019、2022 共 8 年试卷正文关键词统计，知识点级）",
   "questions": [
     {
@@ -49,10 +49,7 @@
       "type": "calc",
       "stem": "一物体从 $20\\,\\mathrm{m}$ 高处由静止自由下落，求落地速度。",
       "answer": "见 `assumptions`：取 $g=10\\,\\mathrm{m/s^{2}}$、忽略空气阻力时 $v=\\sqrt{2gh}=20\\,\\mathrm{m/s}$；取 $g=9.8$ 时为 $19.8\\,\\mathrm{m/s}$。题干缺条件，两种答案都成立。",
-      "assumptions": [
-        "题干未说明是否忽略空气阻力",
-        "题干未给出 $g$ 的取值（10 还是 9.8）"
-      ],
+      "assumptions": ["题干未说明是否忽略空气阻力", "题干未给出 $g$ 的取值（10 还是 9.8）"],
       "error_tags": ["undefined_assumption", "condition_omitted"],
       "verify_hint": null,
       "source": "自编·缺假设样例（供结构化质疑演示）",
@@ -205,10 +202,7 @@
       "type": "calc",
       "stem": "求 $1\\,\\mathrm{mol}$ 理想气体的内能。",
       "answer": "见 `assumptions`：$U=\\dfrac{i}{2}RT$，需同时给出自由度 $i$ 与温度 $T$。例如单原子气体 $i=3$、$T=300\\,\\mathrm{K}$ 时 $U\\approx3.74\\times10^{3}\\,\\mathrm{J}$。",
-      "assumptions": [
-        "题干未说明气体种类（自由度 $i$：单原子 3、双原子 5）",
-        "题干未给出温度 $T$"
-      ],
+      "assumptions": ["题干未说明气体种类（自由度 $i$：单原子 3、双原子 5）", "题干未给出温度 $T$"],
       "error_tags": ["undefined_assumption", "condition_omitted"],
       "verify_hint": null,
       "source": "自编·缺假设样例（供结构化质疑演示）",
@@ -264,6 +258,107 @@
       "verify_hint": null,
       "source": "自编·改编自 2022 春期末选择题",
       "license_note": "校内教学使用"
+    },
+    {
+      "question_id": "phy_rigid_0002",
+      "subject": "physics",
+      "knowledge_ids": ["phy.rigid.kp01"],
+      "scenario_tags": ["final_review"],
+      "chapter": "刚体的定轴转动",
+      "exam_hot": true,
+      "difficulty": 5,
+      "type": "calc",
+      "stem": "均匀圆盘滑轮质量 $M=4.0\\ \\mathrm{kg}$、半径 $R=0.5\\ \\mathrm{m}$，可绕水平光滑固定轴转动。跨过滑轮的轻绳一端绕在轮缘上，另一端悬挂质量 $m=2.0\\ \\mathrm{kg}$ 的物体，绳与轮之间无相对滑动，轮轴摩擦不计。取 $g=9.8\\ \\mathrm{m/s^{2}}$，求物体下落的加速度 $a$ 与绳中张力 $T$。",
+      "answer": "对物体：$mg-T=ma$；对滑轮（$I=\\dfrac{1}{2}MR^{2}$，$\\alpha=\\dfrac{a}{R}$）：$TR=\\dfrac{1}{2}MR^{2}\\cdot\\dfrac{a}{R}$，即 $T=\\dfrac{1}{2}Ma$。\n两式联立：$mg=a\\left(m+\\dfrac{M}{2}\\right)$，得\n$$a=\\frac{2mg}{2m+M}=\\frac{2\\times2.0\\times9.8}{4.0+4.0}=4.9\\ \\mathrm{m/s^{2}},\\qquad T=\\frac{Mmg}{2m+M}=9.8\\ \\mathrm{N}.$$\n**易错**：把滑轮当无质量，直接得 $a=g$、$T=0$；正确结果是 $a=\\dfrac{g}{2}$、$T=mg-ma=9.8\\ \\mathrm{N}$（张力不为零）。",
+      "assumptions": [],
+      "error_tags": ["formula_misuse", "concept_confusion"],
+      "verify_hint": { "expr": "2*2.0*9.8/(2*2.0+4.0)", "expected": "4.9" },
+      "source": "自编·转动定律与牛顿第二定律联立",
+      "license_note": "自编改编"
+    },
+    {
+      "question_id": "phy_dyn_0003",
+      "subject": "physics",
+      "knowledge_ids": ["phy.dynamics.kp05"],
+      "scenario_tags": ["final_review"],
+      "chapter": "质点力学的基本规律 守恒定律",
+      "exam_hot": true,
+      "difficulty": 5,
+      "type": "calc",
+      "stem": "光滑水平桌面上，质量 $m=0.5\\ \\mathrm{kg}$ 的小球用细绳系于桌面小孔，以半径 $r_{0}=0.4\\ \\mathrm{m}$、速率 $v_{0}=2.0\\ \\mathrm{m/s}$ 作匀速圆周运动。现从孔下**缓慢**拉绳，使半径变为 $\\dfrac{r_{0}}{2}$。求：(1) 小球此时的速率；(2) 拉力所做的功。",
+      "answer": "(1) 绳的拉力沿径向，对孔的力矩为零，角动量守恒：$mv_{0}r_{0}=mvr$，故\n$$v=v_{0}\\frac{r_{0}}{r}=2v_{0}=4.0\\ \\mathrm{m/s}.$$\n(2) 缓慢拉动意味着径向动能可忽略，拉力做功全部转为切向动能：\n$$W=\\Delta E_{k}=\\frac{1}{2}m\\left(v^{2}-v_{0}^{2}\\right)=\\frac{1}{2}\\times0.5\\times(16-4)=3.0\\ \\mathrm{J}.$$\n**易错**：用 $W=Fr$ 或认为\"拉力沿径向不做功\"。拉力沿绳方向，但绳长在变，位移有径向分量，故做功；正确做法是能量法。",
+      "assumptions": [],
+      "error_tags": ["concept_confusion", "formula_misuse"],
+      "verify_hint": { "expr": "Rational(1,2)*0.5*(4.0**2-2.0**2)", "expected": "3.0" },
+      "source": "自编·角动量守恒 + 功与动能定理",
+      "license_note": "自编改编"
+    },
+    {
+      "question_id": "phy_wave_0003",
+      "subject": "physics",
+      "knowledge_ids": ["phy.wave.kp04"],
+      "scenario_tags": ["final_review"],
+      "chapter": "波动",
+      "exam_hot": true,
+      "difficulty": 4,
+      "type": "calc",
+      "stem": "一根长 $L=1.0\\ \\mathrm{m}$ 的弦两端固定，线密度 $\\mu=4.0\\times10^{-3}\\ \\mathrm{kg/m}$，张力 $F=100\\ \\mathrm{N}$。求弦上可能形成的驻波的基频与第三谐波频率。",
+      "answer": "波速 $v=\\sqrt{\\dfrac{F}{\\mu}}=\\sqrt{\\dfrac{100}{4.0\\times10^{-3}}}=\\sqrt{2.5\\times10^{4}}=158.1\\ \\mathrm{m/s}$。\n两端固定时 $L=n\\dfrac{\\lambda}{2}$，故\n$$f_{n}=\\frac{nv}{2L}=n\\times79.06\\ \\mathrm{Hz}.$$\n基频 $f_{1}=79.1\\ \\mathrm{Hz}$；第三谐波 $f_{3}=3f_{1}=237.2\\ \\mathrm{Hz}$（对应 3 个波腹）。\n**易错**：把第三谐波写成 $f=\\dfrac{3v}{4L}$（那是**一端固定一端自由**的公式）。",
+      "assumptions": [],
+      "error_tags": ["formula_misuse", "concept_confusion"],
+      "verify_hint": { "expr": "sqrt(100/(4.0e-3))/(2*1.0)", "expected": "79.0569415042095" },
+      "source": "自编·弦驻波谐频",
+      "license_note": "自编改编"
+    },
+    {
+      "question_id": "phy_thermo_0003",
+      "subject": "physics",
+      "knowledge_ids": ["phy.thermo.kp03"],
+      "scenario_tags": ["final_review"],
+      "chapter": "热力学基本原理",
+      "exam_hot": true,
+      "difficulty": 5,
+      "type": "calc",
+      "stem": "$1\\ \\mathrm{mol}$ 单原子理想气体经历如下循环：$A\\to B$ 等容升温，温度由 $T_{0}$ 升到 $2T_{0}$；$B\\to C$ 等压膨胀，温度由 $2T_{0}$ 升到 $4T_{0}$；$C\\to D$ 等容降温回到 $2T_{0}$；$D\\to A$ 等压压缩回到初态。取 $T_{0}=300\\ \\mathrm{K}$、$R=8.314\\ \\mathrm{J/(mol\\cdot K)}$，求：(1) 各过程的吸放热；(2) 循环净功；(3) 循环效率，并与同温区卡诺效率比较。",
+      "answer": "单原子气体 $C_{V}=\\dfrac{3}{2}R$、$C_{p}=\\dfrac{5}{2}R$，$n=1$。\n\n| 过程 | 类型 | $\\Delta T$ | $Q$ | 吸/放 |\n|---|---|---|---|---|\n| $A\\to B$ | 等容 | $+T_{0}$ | $\\dfrac32RT_{0}=3741\\ \\mathrm{J}$ | 吸 |\n| $B\\to C$ | 等压 | $+2T_{0}$ | $\\dfrac52R\\cdot2T_{0}=5RT_{0}=12471\\ \\mathrm{J}$ | 吸 |\n| $C\\to D$ | 等容 | $-2T_{0}$ | $-3RT_{0}=-7483\\ \\mathrm{J}$ | 放 |\n| $D\\to A$ | 等压 | $-T_{0}$ | $-\\dfrac52RT_{0}=-6236\\ \\mathrm{J}$ | 放 |\n\n(2) $Q_{吸}=6.5RT_{0}=16212\\ \\mathrm{J}$，$Q_{放}=5.5RT_{0}=13718\\ \\mathrm{J}$，$W=Q_{吸}-Q_{放}=RT_{0}=2494\\ \\mathrm{J}$。\n\n(3) $\\eta=\\dfrac{W}{Q_{吸}}=\\dfrac{1}{6.5}=15.4\\%$。同温区（$300\\sim1200\\ \\mathrm{K}$）卡诺效率 $\\eta_{C}=1-\\dfrac{300}{1200}=75\\%$，本循环远低于该上限，符合热力学第二定律。\n**易错**：把 $B\\to C$ 的 $\\Delta T$ 当成 $2T_{0}-T_{0}$；或忘记等压过程用 $C_{p}$。",
+      "assumptions": [],
+      "error_tags": ["formula_misuse", "calculation_error"],
+      "verify_hint": { "expr": "(6.5*8.314*300 - 5.5*8.314*300)/(6.5*8.314*300)", "expected": "0.15384615384615385" },
+      "source": "自编·四过程循环效率（非卡诺）",
+      "license_note": "自编改编"
+    },
+    {
+      "question_id": "phy_diff_0002",
+      "subject": "physics",
+      "knowledge_ids": ["phy.diffraction.kp02"],
+      "scenario_tags": ["final_review"],
+      "chapter": "光的衍射",
+      "exam_hot": true,
+      "difficulty": 5,
+      "type": "calc",
+      "stem": "一光栅的光栅常数 $d=3.0\\ \\mu\\mathrm{m}$，每条缝宽 $a=1.0\\ \\mu\\mathrm{m}$。用波长 $\\lambda=600\\ \\mathrm{nm}$ 的单色光垂直照射。求：(1) 能观察到的全部主极大级次；(2) 实际可见的主极大条数（含中央明纹）。",
+      "answer": "(1) 由光栅方程 $d\\sin\\theta=k\\lambda$ 与 $|\\sin\\theta|\\le1$ 得 $|k|\\le\\dfrac{d}{\\lambda}=\\dfrac{3000}{600}=5$，即 $k=0,\\pm1,\\pm2,\\pm3,\\pm4,\\pm5$。\n\n缺级条件：$\\dfrac{d}{a}=3$，故 $k=\\pm3,\\pm6,\\pm9,\\cdots$ 缺级，在范围内只有 $k=\\pm3$ 缺失。\n\n(2) $k=\\pm5$ 时 $\\sin\\theta=\\pm1$，衍射角 $\\theta=\\pm90^{\\circ}$，光线掠射，实际观察不到。故可见级次为\n$$k=0,\\ \\pm1,\\ \\pm2,\\ \\pm4,$$\n共 **7** 条。\n**易错**：① 忘记 $\\dfrac{d}{a}=3$ 造成的 $\\pm3$ 缺级，答 11 条；② 把掠射的 $\\pm5$ 也算进去，答 9 条。",
+      "assumptions": [],
+      "error_tags": ["condition_omitted", "formula_misuse"],
+      "verify_hint": { "expr": "floor(3.0e-6/600e-9)", "expected": "5" },
+      "source": "自编·光栅方程 + 缺级 + 掠射判据",
+      "license_note": "自编改编"
     }
-  ]
+  ],
+  "counts": {
+    "total": 20,
+    "by_chapter": {
+      "phy.diffraction": 2,
+      "phy.dynamics": 3,
+      "phy.interference": 1,
+      "phy.kinematics": 2,
+      "phy.kinetic": 2,
+      "phy.polarization": 1,
+      "phy.rigid": 2,
+      "phy.thermo": 3,
+      "phy.vibration": 1,
+      "phy.wave": 3
+    },
+    "with_verify_hint": 13
+  }
 }

@@ -1,10 +1,27 @@
 import {
+  BulbOutlined,
   CheckOutlined,
+  ClockCircleOutlined,
   ExclamationCircleOutlined,
-  ProjectOutlined,
+  FlagOutlined,
+  HeartOutlined,
+  TeamOutlined,
+  WarningOutlined,
 } from "@ant-design/icons";
-import { Button, Empty, Tag } from "antd";
+import { Button, Empty, Space, Tag } from "antd";
+import { Link } from "react-router-dom";
 
+import {
+  AGENT_ROSTER,
+  evidenceWithoutThread,
+  fallbackAgentThread,
+  parseAgentThread,
+  resolveAgent,
+} from "../data/agentRoster";
+import {
+  describeBlackboardEntry,
+  sortBlackboardEntries,
+} from "../data/blackboardMeta";
 import { useLearningStore } from "../stores/useLearningStore";
 import type { BlackboardEntry } from "../types/api";
 
@@ -15,20 +32,19 @@ interface BlackboardPanelProps {
   onResolve?: (entry: BlackboardEntry) => Promise<void> | void;
 }
 
-const typeLabels: Record<string, string> = {
-  conflict: "时间冲突",
-  challenge: "题目提醒",
-  intervention: "节奏提醒",
-  hypothesis: "学习建议",
-  stage_conclusion: "阶段小结",
-};
+const toneIcon = {
+  conflict: <ClockCircleOutlined />,
+  challenge: <WarningOutlined />,
+  intervention: <HeartOutlined />,
+  hypothesis: <BulbOutlined />,
+  stage: <FlagOutlined />,
+  default: <ExclamationCircleOutlined />,
+} as const;
 
-const typeColors: Record<string, string> = {
-  conflict: "orange",
-  challenge: "red",
-  intervention: "gold",
-  hypothesis: "blue",
-  stage_conclusion: "green",
+const severityColor: Record<string, string> = {
+  high: "red",
+  medium: "orange",
+  low: "blue",
 };
 
 export function BlackboardPanel({
@@ -45,61 +61,138 @@ export function BlackboardPanel({
       : filter === "resolved"
         ? entries.filter((entry) => entry.status !== "open")
         : entries;
-  const visibleEntries = statusEntries.slice(0, limit);
+  const visibleEntries = sortBlackboardEntries(statusEntries).slice(0, limit);
 
   if (!visibleEntries.length) {
     return (
       <Empty
         image={Empty.PRESENTED_IMAGE_SIMPLE}
-        description="暂无黑板条目"
+        description={
+          compact
+            ? "暂无待处理提醒"
+            : "当前没有提醒。练习、调计划或模拟中断后，重要事项会出现在这里。"
+        }
       />
     );
   }
 
   return (
-    <div className="blackboard-panel">
-      {visibleEntries.map((entry) => (
-        <article className="blackboard-entry" key={entry.entry_id}>
-          <span className={`blackboard-entry__icon ${entry.type}`}>
-            <ProjectOutlined />
-          </span>
-          <div className="blackboard-entry__copy">
-            <div className="blackboard-entry__meta">
-              <Tag color={typeColors[entry.type] || "default"}>
-                {typeLabels[entry.type] || entry.type}
-              </Tag>
-              <code>{entry.entry_id}</code>
+    <div className={`blackboard-panel${compact ? " is-compact" : ""}`}>
+      {visibleEntries.map((entry) => {
+        const view = describeBlackboardEntry(entry);
+        const open = entry.status === "open";
+        const parsed = parseAgentThread(entry.evidence_refs);
+        const thread =
+          parsed.length > 0 ? parsed : fallbackAgentThread(entry.type);
+        const plainEvidence = evidenceWithoutThread(entry.evidence_refs);
+
+        return (
+          <article
+            key={entry.entry_id}
+            className={`blackboard-card tone-${view.tone}${open ? " is-open" : " is-resolved"}`}
+          >
+            <div className="blackboard-card__head">
+              <span className={`blackboard-card__icon tone-${view.tone}`}>
+                {toneIcon[view.tone]}
+              </span>
+              <div className="blackboard-card__titles">
+                <div className="blackboard-card__tags">
+                  <Tag color={severityColor[entry.severity] || "default"}>
+                    {view.severityLabel}
+                  </Tag>
+                  <Tag>{view.typeLabel}</Tag>
+                  {!open ? <Tag color="success">已处理</Tag> : null}
+                </div>
+                <h3>{compact ? entry.summary : view.title}</h3>
+              </div>
             </div>
-            <strong>{entry.summary}</strong>
-            <div className="blackboard-entry__evidence">
-              {(entry.evidence_refs ?? []).slice(0, 3).map((reference) => (
-                <span key={reference}>{reference}</span>
-              ))}
+
+            <p className="blackboard-card__summary">{entry.summary}</p>
+
+            {!compact ? (
+              <div className="blackboard-card__grid">
+                <div>
+                  <span className="blackboard-card__label">为什么出现</span>
+                  <p>{view.why}</p>
+                </div>
+                <div>
+                  <span className="blackboard-card__label">建议你现在</span>
+                  <p>{view.nextStep}</p>
+                </div>
+              </div>
+            ) : null}
+
+            <div className={`blackboard-thread${compact ? " is-compact" : ""}`}>
+              <div className="blackboard-thread__head">
+                <TeamOutlined />
+                <span>老师 / 助手在黑板上的传话</span>
+              </div>
+              <ol className="blackboard-thread__list">
+                {thread.slice(0, compact ? 3 : 12).map((msg, index) => {
+                  const agent = resolveAgent(
+                    AGENT_ROSTER[msg.agentId as keyof typeof AGENT_ROSTER],
+                    String(msg.agentId),
+                  );
+                  return (
+                    <li key={`${entry.entry_id}-${index}`} className="blackboard-thread__item">
+                      <span
+                        className="blackboard-thread__avatar"
+                        style={{ background: agent.color }}
+                        aria-hidden
+                      >
+                        {agent.name.slice(0, 1)}
+                      </span>
+                      <div className="blackboard-thread__bubble">
+                        <div className="blackboard-thread__meta">
+                          <strong>{agent.name}</strong>
+                          <em>{agent.title}</em>
+                        </div>
+                        <p>{msg.text}</p>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
             </div>
-          </div>
-          <div className="blackboard-entry__action">
-            {entry.status === "open" ? (
-              <Button
-                size="small"
-                icon={<CheckOutlined />}
-                onClick={async () => {
-                  if (onResolve) {
-                    await onResolve(entry);
-                  } else {
-                    resolveEntry(entry.entry_id);
-                  }
-                }}
-              >
-                已了解
-              </Button>
-            ) : (
-              <Tag color="green" icon={<ExclamationCircleOutlined />}>
-                已处理
-              </Tag>
-            )}
-          </div>
-        </article>
-      ))}
+
+            {plainEvidence.length ? (
+              <div className="blackboard-card__evidence">
+                {plainEvidence.slice(0, compact ? 2 : 4).map((reference) => (
+                  <span key={reference}>{reference}</span>
+                ))}
+              </div>
+            ) : null}
+
+            <div className="blackboard-card__actions">
+              <Space wrap>
+                {!compact ? (
+                  <Link to={view.actionPath}>
+                    <Button type="primary" size="small">
+                      {view.actionLabel}
+                    </Button>
+                  </Link>
+                ) : null}
+                {open ? (
+                  <Button
+                    size="small"
+                    icon={<CheckOutlined />}
+                    onClick={async () => {
+                      if (onResolve) await onResolve(entry);
+                      else resolveEntry(entry.entry_id);
+                    }}
+                  >
+                    已了解
+                  </Button>
+                ) : (
+                  <Tag color="green" icon={<CheckOutlined />}>
+                    已确认
+                  </Tag>
+                )}
+              </Space>
+            </div>
+          </article>
+        );
+      })}
     </div>
   );
 }

@@ -17,7 +17,10 @@ from app.services import material_files
 @pytest.fixture
 def setup(tmp_path, monkeypatch):
     monkeypatch.setattr(material_files, "get_settings", lambda: SimpleNamespace(
-        materials_root=tmp_path / "originals", libreoffice_binary="libreoffice"))
+        materials_root=tmp_path / "originals",
+        libreoffice_binary="libreoffice",
+        materials_x_accel_prefix="",
+    ))
     root = tmp_path / "originals"
     root.mkdir()
     (root / "课件.pdf").write_bytes(b"%PDF-1.4\nexample")
@@ -52,6 +55,7 @@ def test_pdf_download_preview_and_status(setup):
     assert preview.content == download.content
     assert preview.headers["content-type"] == "application/pdf"
     assert "inline" in preview.headers["content-disposition"]
+    assert "max-age=86400" in preview.headers.get("cache-control", "")
 
 
 @pytest.mark.parametrize("key", ["missing", "escape", "symlink", "unknown"])
@@ -85,6 +89,10 @@ def test_office_conversion_and_cleanup(setup, monkeypatch):
     response = client.get("/api/materials/office/preview")
     assert response.status_code == 200 and response.content == b"%PDF-converted"
     assert not outputs[0].parent.exists()
+    # 二次预览应命中磁盘缓存，不再调用 LibreOffice
+    response2 = client.get("/api/materials/office/preview")
+    assert response2.status_code == 200 and response2.content == b"%PDF-converted"
+    assert len(outputs) == 1
 
 
 def test_conversion_timeout(setup, monkeypatch):

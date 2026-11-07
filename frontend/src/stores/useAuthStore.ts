@@ -50,6 +50,12 @@ export const DEMO_ACCOUNTS = [
     hint: "陈可 · 节奏恢复",
   },
   {
+    username: "cs",
+    password: "demo",
+    label: "cs / demo",
+    hint: "江予澈 · 计概 Python",
+  },
+  {
     username: "admin",
     password: "admin",
     label: "admin / admin",

@@ -1,7 +1,7 @@
 {
   "subject": "math",
-  "version": "1.1",
-  "scope": "《大学数学 1》第三版 上册 8 章（高数 A1）；共 30 题，每章 3–4 题，配额见 data/intake/collection_list.csv",
+  "version": "1.2",
+  "scope": "《大学数学 1》第三版 上册 8 章（高数 A1）；共 39 题（v1.0 的 30 题 + v1.2 追加 9 道难题），每章 3–6 题，配额见 data/intake/collection_list.csv",
   "exam_hot_source": "exams/exam_hot_math.json（17/18/19/20/23 级参考答案关键词统计，章级）",
   "questions": [
     {
@@ -789,20 +789,263 @@
       },
       "source": "自编",
       "license_note": "自编改编"
+    },
+    {
+      "question_id": "math_a1c01_0004",
+      "subject": "math",
+      "knowledge_ids": [
+        "math.a1.ch01.kp03"
+      ],
+      "scenario_tags": [
+        "catch_up",
+        "final_review"
+      ],
+      "chapter": "集合与函数",
+      "exam_hot": false,
+      "difficulty": 5,
+      "type": "calc",
+      "stem": "设 $f(x)=\\arcsin\\dfrac{2x}{1+x^{2}}$，求 $f(x)$ 的分段表达式（按 $|x|\\le 1$、$x>1$、$x<-1$ 三段讨论）。",
+      "answer": "令 $x=\\tan t$，则 $\\dfrac{2x}{1+x^{2}}=\\sin 2t$，故 $f(x)=\\arcsin(\\sin 2t)$。按 $2t$ 落在主值区间 $\\left[-\\dfrac{\\pi}{2},\\dfrac{\\pi}{2}\\right]$ 与否分段：\n$$f(x)=\\begin{cases}2\\arctan x, & |x|\\le 1,\\\\[4pt] \\pi-2\\arctan x, & x>1,\\\\[4pt] -\\pi-2\\arctan x, & x<-1.\\end{cases}$$\n在 $x=\\pm 1$ 三段取值一致（$\\pm\\dfrac{\\pi}{2}$），故 $f$ 连续；但 $f'(1^{-})=1$、$f'(1^{+})=-1$，$x=\\pm1$ 处不可导。",
+      "assumptions": [],
+      "error_tags": [
+        "formula_misuse",
+        "boundary_condition"
+      ],
+      "verify_hint": {
+        "expr": "simplify(asin(2*x/(1+x**2)) - 2*atan(x)).subs(x, Rational(1, 2))",
+        "expected": "0"
+      },
+      "source": "自编·反三角复合分段（教材 §1.3 初等函数习题改编）",
+      "license_note": "自编改编"
+    },
+    {
+      "question_id": "math_a1c02_0005",
+      "subject": "math",
+      "knowledge_ids": [
+        "math.a1.ch02.kp06"
+      ],
+      "scenario_tags": [
+        "catch_up",
+        "final_review"
+      ],
+      "chapter": "极限",
+      "exam_hot": true,
+      "difficulty": 4,
+      "type": "calc",
+      "stem": "求 $\\lim\\limits_{x\\to 0^{+}}\\left(\\dfrac{1}{x}\\right)^{\\tan x}$。",
+      "answer": "这是 $\\infty^{0}$ 型。取对数：$\\ln L=\\tan x\\cdot\\ln\\dfrac{1}{x}=-\\tan x\\ln x$。\n由 $\\tan x\\sim x\\ (x\\to0)$ 与 $\\lim\\limits_{x\\to0^{+}}x\\ln x=0$，得 $\\ln L=0$，故 $L=e^{0}=1$。\n**注意**：不能写成 $\\infty^{0}=1$——必须说明 $x\\ln x\\to0$ 这一步。",
+      "assumptions": [],
+      "error_tags": [
+        "formula_misuse",
+        "calculation_error"
+      ],
+      "verify_hint": {
+        "expr": "limit((1/x)**tan(x), x, 0, '+')",
+        "expected": "1"
+      },
+      "source": "自编·幂指函数极限",
+      "license_note": "自编改编"
+    },
+    {
+      "question_id": "math_a1c03_0004",
+      "subject": "math",
+      "knowledge_ids": [
+        "math.a1.ch03.kp01"
+      ],
+      "scenario_tags": [
+        "catch_up",
+        "final_review"
+      ],
+      "chapter": "函数的连续性",
+      "exam_hot": true,
+      "difficulty": 5,
+      "type": "calc",
+      "stem": "设 $f(x)=\\begin{cases}\\dfrac{x^{2}\\sin\\frac{1}{x}}{\\sin x}, & x\\ne 0,\\\\[4pt] a, & x=0.\\end{cases}$\n(1) 求常数 $a$ 使 $f$ 在 $x=0$ 处连续；(2) 判断此时 $f$ 在 $x=0$ 处是否可导。",
+      "answer": "(1) $\\left|f(x)\\right|\\le\\dfrac{x^{2}}{|\\sin x|}\\le 2|x|\\to 0$（$|x|$ 充分小时 $|\\sin x|\\ge\\dfrac{|x|}{2}$），故 $\\lim\\limits_{x\\to0}f(x)=0$，取 $a=0$ 即连续。\n\n(2) **不可导**。差商\n$$\\frac{f(x)-f(0)}{x}=\\frac{x\\sin\\frac{1}{x}}{\\sin x}=\\frac{x}{\\sin x}\\sin\\frac{1}{x},$$\n而 $\\dfrac{x}{\\sin x}\\to1$、$\\sin\\dfrac{1}{x}$ 振荡无极限。取 $x_n=\\dfrac{1}{n\\pi}$ 得差商 $\\equiv0$；取 $x_n=\\dfrac{1}{2n\\pi+\\pi/2}$ 得差商 $\\to1$。两子列极限不同，故 $f'(0)$ 不存在。\n**易错**：把 $\\sin\\frac{1}{x}$ 当有界量直接说\"极限为 0\"——有界量乘无穷小才为 0，此处乘的是 $\\dfrac{x}{\\sin x}\\to1$。",
+      "assumptions": [],
+      "error_tags": [
+        "concept_confusion",
+        "boundary_condition"
+      ],
+      "verify_hint": {
+        "expr": "limit(x*sin(1/x)/sin(x), x, 0)",
+        "expected": "AccumBounds(-1, 1)"
+      },
+      "source": "自编·连续与可导的经典反例",
+      "license_note": "自编改编"
+    },
+    {
+      "question_id": "math_a1c04_0005",
+      "subject": "math",
+      "knowledge_ids": [
+        "math.a1.ch04.kp06"
+      ],
+      "scenario_tags": [
+        "final_review"
+      ],
+      "chapter": "函数的导数和微分",
+      "exam_hot": true,
+      "difficulty": 5,
+      "type": "calc",
+      "stem": "求 $\\lim\\limits_{x\\to 0}\\dfrac{(1+x)^{1/x}-e}{x}$。",
+      "answer": "记 $u=\\dfrac{\\ln(1+x)}{x}-1=-\\dfrac{x}{2}+\\dfrac{x^{2}}{3}-\\dfrac{x^{3}}{4}+O(x^{4})$，则\n$$(1+x)^{1/x}=e\\,e^{u}=e\\left[1+u+\\dfrac{u^{2}}{2}+O(u^{3})\\right]=e\\left[1-\\dfrac{x}{2}+\\dfrac{11}{24}x^{2}+O(x^{3})\\right].$$\n于是 $(1+x)^{1/x}-e=-\\dfrac{e}{2}x+O(x^{2})$，原极限 $=-\\dfrac{e}{2}$。\n**易错**：直接分开算两个极限（$e-e=0$ 再除 $x$）会得到 0；必须展开到 $x$ 的一次项。",
+      "assumptions": [],
+      "error_tags": [
+        "formula_misuse",
+        "calculation_error"
+      ],
+      "verify_hint": {
+        "expr": "limit(((1+x)**(1/x)-E)/x, x, 0)",
+        "expected": "-E/2"
+      },
+      "source": "自编·泰勒展开求极限",
+      "license_note": "自编改编"
+    },
+    {
+      "question_id": "math_a1c05_0005",
+      "subject": "math",
+      "knowledge_ids": [
+        "math.a1.ch05.kp02"
+      ],
+      "scenario_tags": [
+        "final_review"
+      ],
+      "chapter": "导数与微分的应用举例",
+      "exam_hot": true,
+      "difficulty": 5,
+      "type": "calc",
+      "stem": "设 $a>0$，$f(x)=x^{2}e^{-ax}$（$x\\ge0$）。(1) 求 $f$ 在 $[0,+\\infty)$ 上的最大值 $M(a)$；(2) 求使 $M(a)\\le\\dfrac{1}{2}$ 的 $a$ 的取值范围。",
+      "answer": "(1) $f'(x)=e^{-ax}(2x-ax^{2})=xe^{-ax}(2-ax)$，唯一驻点 $x=\\dfrac{2}{a}$（$x=0$ 为端点）。$f\\left(\\dfrac{2}{a}\\right)=\\dfrac{4}{a^{2}}e^{-2}$，且 $x\\to+\\infty$ 时 $f\\to0$，故\n$$M(a)=\\frac{4e^{-2}}{a^{2}}.$$\n(2) $\\dfrac{4e^{-2}}{a^{2}}\\le\\dfrac{1}{2}\\iff a^{2}\\ge\\dfrac{8}{e^{2}}\\iff a\\ge\\dfrac{2\\sqrt{2}}{e}$。\n故 $a\\in\\left[\\dfrac{2\\sqrt{2}}{e},\\,+\\infty\\right)$，临界值 $\\dfrac{2\\sqrt2}{e}\\approx1.0405$。",
+      "assumptions": [],
+      "error_tags": [
+        "condition_omitted",
+        "calculation_error"
+      ],
+      "verify_hint": {
+        "expr": "simplify(4*exp(-2)/(2*sqrt(2)/E)**2 - Rational(1, 2))",
+        "expected": "0"
+      },
+      "source": "自编·含参最值 + 参数范围",
+      "license_note": "自编改编"
+    },
+    {
+      "question_id": "math_a1c05_0006",
+      "subject": "math",
+      "knowledge_ids": [
+        "math.a1.ch05.kp01"
+      ],
+      "scenario_tags": [
+        "final_review"
+      ],
+      "chapter": "导数与微分的应用举例",
+      "exam_hot": true,
+      "difficulty": 5,
+      "type": "calc",
+      "stem": "设 $0<a<b$，证明：$\\dfrac{b-a}{b}<\\ln\\dfrac{b}{a}<\\dfrac{b-a}{a}$。",
+      "answer": "对 $f(t)=\\ln t$ 在 $[a,b]$ 上用拉格朗日中值定理：存在 $\\xi\\in(a,b)$ 使\n$$\\ln\\frac{b}{a}=\\frac{b-a}{\\xi}.$$\n由 $a<\\xi<b$ 得 $\\dfrac{1}{b}<\\dfrac{1}{\\xi}<\\dfrac{1}{a}$，两边乘 $b-a>0$ 即得\n$$\\frac{b-a}{b}<\\ln\\frac{b}{a}<\\frac{b-a}{a}.$$\n**另一路**（不需中值定理）：令 $g(t)=\\ln t-\\dfrac{t-a}{t}$，证 $g(b)>0$；令 $h(t)=\\ln t-\\dfrac{t-a}{a}$，证 $h(b)<0$。\n**取等**：$a=b$ 时三式同为 0，故必须 $a<b$。",
+      "assumptions": [],
+      "error_tags": [
+        "solution_missing",
+        "concept_confusion"
+      ],
+      "verify_hint": null,
+      "source": "自编·教材 §5.1 中值定理应用题",
+      "license_note": "自编改编"
+    },
+    {
+      "question_id": "math_a1c06_0005",
+      "subject": "math",
+      "knowledge_ids": [
+        "math.a1.ch06.kp05"
+      ],
+      "scenario_tags": [
+        "final_review"
+      ],
+      "chapter": "函数的积分",
+      "exam_hot": true,
+      "difficulty": 5,
+      "type": "calc",
+      "stem": "计算反常积分 $\\displaystyle\\int_{0}^{+\\infty}\\dfrac{\\ln x}{1+x^{2}}\\,\\mathrm{d}x$，并说明它收敛。",
+      "answer": "记 $I=\\displaystyle\\int_{0}^{+\\infty}\\dfrac{\\ln x}{1+x^{2}}\\,\\mathrm{d}x$。作换元 $x=\\dfrac{1}{t}$：\n$$I=\\int_{+\\infty}^{0}\\frac{\\ln(1/t)}{1+1/t^{2}}\\left(-\\frac{\\mathrm{d}t}{t^{2}}\\right)=\\int_{0}^{+\\infty}\\frac{-\\ln t}{t^{2}+1}\\,\\mathrm{d}t=-I,$$\n故 $2I=0$，即 $I=0$。\n\n**收敛性**：$x\\to0^{+}$ 时 $\\dfrac{\\ln x}{1+x^{2}}\\sim\\ln x$，$\\int_{0}^{1}\\ln x\\,\\mathrm{d}x=-1$ 收敛；$x\\to+\\infty$ 时 $\\left|\\dfrac{\\ln x}{1+x^{2}}\\right|\\le\\dfrac{\\ln x}{x^{2}}$，而 $\\int_{1}^{+\\infty}\\dfrac{\\ln x}{x^{2}}\\mathrm{d}x=1$ 收敛。两端都收敛，故 $I$ 收敛。\n\n**附**：$\\displaystyle\\int_{0}^{1}\\dfrac{\\ln x}{1+x^{2}}\\mathrm{d}x=-G\\approx-0.9160$（$G$ 为 Catalan 常数），$\\int_{1}^{+\\infty}$ 部分恰为 $+G$，两部分抵消为 0。",
+      "assumptions": [],
+      "error_tags": [
+        "concept_confusion",
+        "solution_missing"
+      ],
+      "verify_hint": {
+        "expr": "integrate(log(x)/(1+x**2), (x, 0, oo))",
+        "expected": "0"
+      },
+      "source": "自编·换元对称性 + 反常积分判敛",
+      "license_note": "自编改编"
+    },
+    {
+      "question_id": "math_a1c07_0005",
+      "subject": "math",
+      "knowledge_ids": [
+        "math.a1.ch07.kp04"
+      ],
+      "scenario_tags": [
+        "final_review"
+      ],
+      "chapter": "定积分的应用举例",
+      "exam_hot": true,
+      "difficulty": 5,
+      "type": "calc",
+      "stem": "求曲线 $y=\\sqrt{x}$（$0\\le x\\le1$）绕 $x$ 轴旋转所得旋转体的侧面积。",
+      "answer": "$y'=\\dfrac{1}{2\\sqrt{x}}$，$\\sqrt{1+y'^{2}}=\\sqrt{1+\\dfrac{1}{4x}}=\\dfrac{\\sqrt{4x+1}}{2\\sqrt{x}}$。\n$$S=2\\pi\\int_{0}^{1}\\sqrt{x}\\cdot\\frac{\\sqrt{4x+1}}{2\\sqrt{x}}\\,\\mathrm{d}x=\\pi\\int_{0}^{1}\\sqrt{4x+1}\\,\\mathrm{d}x=\\frac{\\pi}{6}\\left(5\\sqrt{5}-1\\right)\\approx5.3304.$$\n**易错**：$x=0$ 处 $y'$ 不存在，但 $\\sqrt{x}\\sqrt{1+y'^2}=\\dfrac{\\sqrt{4x+1}}{2}$ 在 $0$ 处有极限 $\\dfrac12$，属可去奇点，积分正常收敛。",
+      "assumptions": [],
+      "error_tags": [
+        "formula_misuse",
+        "boundary_condition"
+      ],
+      "verify_hint": {
+        "expr": "integrate(2*pi*sqrt(x)*sqrt(1+1/(4*x)), (x, 0, 1))",
+        "expected": "pi*(5*sqrt(5)-1)/6"
+      },
+      "source": "自编·旋转体侧面积（含端点瑕点）",
+      "license_note": "自编改编"
+    },
+    {
+      "question_id": "math_a1c08_0005",
+      "subject": "math",
+      "knowledge_ids": [
+        "math.a1.ch08.kp02"
+      ],
+      "scenario_tags": [
+        "final_review"
+      ],
+      "chapter": "常微分方程",
+      "exam_hot": true,
+      "difficulty": 4,
+      "type": "calc",
+      "stem": "一容器内盛有 $100\\ \\mathrm{L}$ 盐水，其中含盐 $10\\ \\mathrm{kg}$。现以 $5\\ \\mathrm{L/min}$ 的速率注入含盐 $0.2\\ \\mathrm{kg/L}$ 的盐水，同时以相同速率排出、并充分搅拌使浓度均匀。求 $t$ 时刻容器内的含盐量 $Q(t)$，以及 $t\\to+\\infty$ 时的极限。",
+      "answer": "盐量变化率 = 流入速率 − 流出速率：\n$$\\frac{\\mathrm{d}Q}{\\mathrm{d}t}=5\\times0.2-5\\times\\frac{Q}{100}=1-\\frac{Q}{20},\\qquad Q(0)=10.$$\n这是一阶线性方程，改写 $\\dfrac{\\mathrm{d}Q}{\\mathrm{d}t}+\\dfrac{Q}{20}=1$，积分因子 $e^{t/20}$：\n$$Q(t)=20+Ce^{-t/20},\\quad Q(0)=10\\Rightarrow C=-10,$$\n即 $Q(t)=20-10e^{-t/20}\\ (\\mathrm{kg})$，$\\lim\\limits_{t\\to+\\infty}Q(t)=20\\ \\mathrm{kg}$。\n**校验**：极限 20 kg 对应浓度 $0.2\\ \\mathrm{kg/L}$，与注入液浓度一致，符合直觉。",
+      "assumptions": [],
+      "error_tags": [
+        "condition_omitted",
+        "formula_misuse"
+      ],
+      "verify_hint": {
+        "expr": "simplify((20-10*exp(-t/20)).subs(t, 0) - 10)",
+        "expected": "0"
+      },
+      "source": "自编·一阶线性方程建模（混合问题）",
+      "license_note": "自编改编"
     }
   ],
   "counts": {
-    "total": 30,
+    "total": 39,
     "by_chapter": {
-      "ch01": 3,
-      "ch02": 4,
-      "ch03": 3,
-      "ch04": 4,
-      "ch05": 4,
-      "ch06": 4,
-      "ch07": 4,
-      "ch08": 4
+      "ch01": 4,
+      "ch02": 5,
+      "ch03": 4,
+      "ch04": 5,
+      "ch05": 6,
+      "ch06": 5,
+      "ch07": 5,
+      "ch08": 5
     },
-    "with_verify_hint": 26
+    "with_verify_hint": 34
   }
 }

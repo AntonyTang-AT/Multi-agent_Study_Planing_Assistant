@@ -496,6 +496,44 @@ export const PERSONA_BUNDLES: Record<string, PersonaBundle> = {
     ],
     practice_bank: physBank,
   },
+  cs: {
+    chat_thread: [
+      {
+        role: "assistant",
+        text: "予澈你好。今晚计划里「分支循环沙箱 + 洛谷连刷」大约要 70 分钟，已经顶破你设定的 50 分钟。要不要先拍板今晚怎么排？",
+        time: "16:02",
+      },
+      {
+        role: "user",
+        text: "时间不够就先砍掉洛谷？还是加长时间？",
+        time: "16:03",
+      },
+      {
+        role: "assistant",
+        text: "都可以。计划页给你准备了三个方案：多挤一点时间、先只过沙箱、或把洛谷挪到周末。选一个点确认，安排就会立刻更新。",
+        time: "16:03",
+        options: [
+          { label: "确认并更新计划", path: "/plan" },
+          { label: "打开 Python 练习台", path: "/practice" },
+        ],
+      },
+      {
+        role: "user",
+        text: "沙箱过了还要去做洛谷吗？",
+        time: "16:05",
+      },
+      {
+        role: "assistant",
+        text: "要，但今晚可以先保证沙箱自测。洛谷/力扣练「评测输入输出与题感」，确认计划后再按新安排去做就行。",
+        time: "16:05",
+        options: [
+          { label: "去调整今晚计划", path: "/plan" },
+          { label: "看计概资料", path: "/materials?subject=cs" },
+        ],
+      },
+    ],
+    practice_bank: [],
+  },
   catch: {
     chat_thread: [
       {

@@ -26,8 +26,14 @@ class Settings(BaseSettings):
     jwt_expire_days: int = 7
     materials_root: Path = BACKEND_ROOT.parent / "source" / "_原始下载"
     libreoffice_binary: str = "libreoffice"
+    # 非空时预览/下载走 nginx X-Accel（例：/_materials/），避开 uvicorn 传大文件
+    materials_x_accel_prefix: str = ""
 
 
 @lru_cache
 def get_settings() -> Settings:
-    return Settings()
+    settings = Settings()
+    # 相对路径按 backend/ 解析，避免启动 cwd 不同导致 MATERIALS_ROOT 找不到
+    if not settings.materials_root.is_absolute():
+        settings.materials_root = (BACKEND_ROOT / settings.materials_root).resolve()
+    return settings
